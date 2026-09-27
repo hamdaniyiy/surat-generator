@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator Surat Sekolah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    #headerLogoContainer {
+      width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+      max-width: 44px; max-height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; padding: 0; flex-shrink: 0; border-radius: 0.5rem;
+    }
+    #headerLogoContainer img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 0.5rem; }
+    #headerLogoContainer i { font-size: 1.25rem; line-height: 1; }
+
+    .a4-paper {
+      width: 210mm; min-height: 297mm; padding: 20mm; margin: 0 auto;
+      background: #ffffff;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt; line-height: 1.5; color: #000000;
+      box-sizing: border-box; position: relative;
+    }
+    .kop-header { display: flex; align-items: center; border-bottom: 4px double #000000; padding-bottom: 8px; margin-bottom: 20px; }
+    .logo-box { width: 85px; height: 85px; margin-right: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .kop-text { flex: 1; text-align: center; }
+    .kop-text .instansi-tinggi { font-size: 11pt; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+    .kop-text .instansi-dinas { font-size: 12pt; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+    .kop-text .nama-sekolah { font-size: 16pt; font-weight: bold; text-transform: uppercase; margin: 2px 0; letter-spacing: 0.8px; }
+    .kop-text .alamat-kontak { font-size: 9pt; line-height: 1.3; font-weight: normal; }
+
+    .surat-header { text-align: center; margin: 15px 0 20px 0; }
+    .surat-header h3 { font-size: 13pt; text-transform: uppercase; font-weight: bold; text-decoration: underline; margin-bottom: 2px; letter-spacing: 0.5px; }
+    .surat-header .nomor-surat { font-size: 11pt; }
+
+    .tujuan-wrapper { margin-bottom: 20px; line-height: 1.4; }
+    .tgl-kanan { float: right; text-align: right; }
+    .surat-body { text-align: justify; text-indent: 35px; margin-bottom: 12px; }
+    .data-table { margin: 12px 0 16px 35px; width: calc(100% - 35px); font-size: 12pt; border-collapse: collapse; }
+    .data-table td { padding: 3px 0; vertical-align: top; }
+    .data-table td:first-child { width: 150px; }
+    .data-table td:nth-child(2) { width: 18px; text-align: center; }
+
+    .ttd-container { margin-top: 35px; display: flex; justify-content: flex-end; page-break-inside: avoid; }
+    .ttd-box { text-align: center; width: 260px; font-size: 12pt; position: relative; }
+    .ttd-box .space-ttd { height: 75px; display: flex; align-items: center; justify-content: center; margin: 5px 0; position: relative; }
+    .ttd-box .space-ttd img { max-height: 70px; max-width: 200px; object-fit: contain; }
+    .ttd-box .space-ttd img.stempel-img { position: absolute; max-height: 90px; max-width: 90px; opacity: 0.85; }
+    .ttd-box .nama-pejabat { font-weight: bold; text-decoration: underline; }
+
+    .watermark-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; overflow: hidden; }
+    .watermark-container.wm-corner { align-items: flex-start; justify-content: flex-start; padding: 30mm; }
+    .watermark-container img { max-width: 70%; max-height: 70%; object-fit: contain; user-select: none; }
+    .watermark-container .wm-text { font-family: 'Times New Roman', serif; font-size: 80pt; font-weight: bold; color: #000; user-select: none; letter-spacing: 5px; text-align: center; line-height: 1; }
+    #suratContent, .kop-header { position: relative; z-index: 2; }
+
+    /* ============ DARK MODE (DIPERBAIKI) ============ */
+    body.dark-mode { background-color: #0f172a !important; color: #f8fafc !important; }
+    body.dark-mode header { background-color: #1e293b !important; border-bottom: 1px solid #334155; }
+    body.dark-mode .left-panel { background-color: #1e293b !important; border-color: #334155 !important; }
+    body.dark-mode .panel-header { background-color: #0f172a !important; border-color: #334155 !important; }
+    body.dark-mode .panel-header h2 { color: #f8fafc !important; }
+
+    /* Label & Judul form */
+    body.dark-mode label { color: #e2e8f0 !important; }
+    body.dark-mode .section-title { color: #60a5fa !important; }
+    body.dark-mode .section-border { border-color: #334155 !important; }
+    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 { color: #f8fafc !important; }
+    body.dark-mode p { color: #cbd5e1 !important; }
+
+    /* Input form */
+    body.dark-mode input[type="text"], body.dark-mode input[type="date"], body.dark-mode input[type="file"], body.dark-mode input[type="number"], body.dark-mode input[type="color"], body.dark-mode select, body.dark-mode textarea {
+      background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important;
+    }
+    body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color: #64748b !important; }
+    body.dark-mode select option { background-color: #0f172a !important; color: #f8fafc !important; }
+
+    /* Teks Tailwind warna gelap */
+    body.dark-mode .text-slate-800,
+    body.dark-mode .text-slate-700,
+    body.dark-mode .text-slate-600,
+    body.dark-mode .text-slate-500 { color: #cbd5e1 !important; }
+    body.dark-mode .text-slate-400 { color: #94a3b8 !important; }
+
+    /* Background terang jadi gelap */
+    body.dark-mode .bg-slate-50,
+    body.dark-mode .bg-slate-100 { background-color: #1e293b !important; }
+    body.dark-mode .bg-white { background-color: #1e293b !important; }
+
+    /* Panel preview */
+    body.dark-mode .preview-container { background-color: #0f172a !important; }
+    body.dark-mode .action-footer { background-color: #0f172a !important; border-color: #334155 !important; }
+
+    /* Modal */
+    body.dark-mode .modal-content { background: #1e293b; color: #f8fafc; }
+    body.dark-mode .modal-content .modal-header { border-color: #334155; background: #0f172a; }
+    body.dark-mode .modal-content .modal-body { background: #1e293b; }
+    body.dark-mode .modal-content .modal-header h3 { color: #f8fafc !important; }
+    body.dark-mode .modal-content table thead { background: #0f172a; }
+    body.dark-mode .modal-content table td, body.dark-mode .modal-content table th { border-color: #334155; color: #e2e8f0 !important; }
+    body.dark-mode .modal-content table tbody tr:hover { background: #0f172a; }
+
+    /* Kartu template & riwayat */
+    body.dark-mode .letter-card { background: #0f172a; border-color: #334155; }
+    body.dark-mode .letter-card:hover { border-color: #60a5fa; }
+    body.dark-mode .letter-card h4 { color: #f8fafc !important; }
+    body.dark-mode .letter-card p { color: #94a3b8 !important; }
+    body.dark-mode .letter-card .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+
+    /* Tab pengaturan */
+    body.dark-mode .bg-slate-100.p-1 { background-color: #0f172a !important; }
+
+    /* Info box berwarna */
+    body.dark-mode .bg-blue-50 { background-color: #1e3a8a !important; color: #dbeafe !important; }
+    body.dark-mode .bg-indigo-50 { background-color: #312e81 !important; color: #e0e7ff !important; }
+    body.dark-mode .bg-emerald-50 { background-color: #064e3b !important; color: #d1fae5 !important; }
+    body.dark-mode .bg-purple-50 { background-color: #4c1d95 !important; color: #ede9fe !important; }
+    body.dark-mode .bg-slate-50.border { background-color: #1e293b !important; color: #cbd5e1 !important; }
+    body.dark-mode .bg-slate-50.rounded-lg { background-color: #1e293b !important; color: #cbd5e1 !important; }
+
+    /* Border terang */
+    body.dark-mode .border-slate-200,
+    body.dark-mode .border-slate-100 { border-color: #334155 !important; }
+
+    /* Tombol abu-abu */
+    body.dark-mode .bg-slate-200 { background-color: #334155 !important; color: #f8fafc !important; }
+    body.dark-mode .hover\:bg-slate-300:hover { background-color: #475569 !important; }
+
+    /* Preview Nomor box */
+    body.dark-mode #previewNomor { color: #60a5fa !important; }
+
+    /* Toast */
+    body.dark-mode #toast .bg-slate-800 { background-color: #1e293b !important; }
+
+    /* Profile switcher bar */
+    body.dark-mode .bg-slate-700 { background-color: #1e293b !important; }
+    body.dark-mode #profilAktif { background-color: #0f172a !important; color: #f8fafc !important; }
+
+    /* Sticky tombol save di modal */
+    body.dark-mode .sticky.bottom-0.bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+
+    /* Stamp card */
+    body.dark-mode .stamp-card { background: #0f172a; border-color: #334155; }
+    body.dark-mode .stamp-card:hover { background: #1e293b; border-color: #60a5fa; }
+    body.dark-mode .stamp-card .text-slate-700 { color: #e2e8f0 !important; }
+    body.dark-mode .stamp-card .text-slate-500 { color: #94a3b8 !important; }
+
+    /* Kbd shortcut */
+    body.dark-mode .kbd { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+
+    /* A4 Paper TETAP PUTIH di dark mode (ini dokumen cetak) */
+    body.dark-mode .a4-paper { background: #ffffff !important; color: #000000 !important; }
+    body.dark-mode .a4-paper * { color: #000000 !important; }
+    body.dark-mode .a4-paper .wm-text { color: #000000 !important; }
+    body.dark-mode .a4-paper .instansi-tinggi,
+    body.dark-mode .a4-paper .instansi-dinas,
+    body.dark-mode .a4-paper .nama-sekolah,
+    body.dark-mode .a4-paper .alamat-kontak { color: #000000 !important; }
+    /* ============ END DARK MODE ============ */
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); }
+
+    #signaturePad { border: 2px dashed #94a3b8; border-radius: 8px; cursor: crosshair; background: #ffffff; touch-action: none; }
+    body.dark-mode #signaturePad { background: #0f172a; border-color: #475569; }
+
+    .letter-card { transition: all 0.2s ease; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #ffffff; cursor: pointer; }
+    .letter-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59,130,246,0.15); transform: translateY(-1px); }
+
+    /* MODE FOKUS */
+    body.focus-mode .left-panel { display: none !important; }
+    body.focus-mode .preview-container { grid-column: span 12 !important; }
+
+    /* SHORTCUT BADGE */
+    .kbd { display: inline-block; padding: 1px 6px; font-family: monospace; font-size: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; }
+
+    /* STAMP/TTD CARDS */
+    .stamp-card { position: relative; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .stamp-card:hover { border-color: #3b82f6; background: #f0f9ff; }
+    .stamp-card.active { border-color: #2563eb; background: #dbeafe; border-style: solid; }
+
+    @media print {
+      body { background: #ffffff !important; padding: 0 !important; }
+      .no-print { display: none !important; }
+      .preview-container { padding: 0 !important; background: transparent !important; max-height: none !important; overflow: visible !important; }
+      .a4-paper { box-shadow: none !important; width: 100% !important; min-height: auto !important; padding: 0 !important; margin: 0 !important; }
+      body.focus-mode .left-panel { display: none !important; }
+    }
+  </style>
+
+  <style>
+    * { transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    @keyframes bounceIn { 0% { transform: scale(0.9); opacity: 0; } 60% { transform: scale(1.02); opacity: 1; } 100% { transform: scale(1); } }
+
+    header { animation: fadeIn 0.4s ease-out; }
+    .left-panel { animation: slideInLeft 0.5s ease-out; }
+    .preview-container { animation: slideInRight 0.5s ease-out; }
+    .a4-paper { animation: scaleIn 0.5s ease-out; transition: box-shadow 0.3s ease, transform 0.3s ease; }
+
+    button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+    button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); }
+    button:active { transform: translateY(0) scale(0.98); transition-duration: 80ms; }
+
+    input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      transform: translateY(-1px); box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.25), 0 0 0 3px rgba(59, 130, 246, 0.1); transition: all 0.2s ease;
+    }
+
+    .letter-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); animation: fadeInUp 0.35s ease-out backwards; }
+    .letter-card:hover { transform: translateY(-2px) scale(1.005); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
+
+    .modal-overlay { transition: opacity 0.25s ease, backdrop-filter 0.25s ease; }
+    .modal-overlay.active { animation: fadeIn 0.2s ease; }
+    .modal-content { animation: bounceIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    #signaturePad { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+    #signaturePad:hover { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+    .logo-box { transition: transform 0.3s ease; }
+    .logo-box:hover { transform: scale(1.05) rotate(-1deg); }
+
+    #toast { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    html { scroll-behavior: smooth; }
+
+    .fa-spinner { animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    input, textarea, select { transition: all 0.2s ease; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+
+  <style>
+    header {
+      position: relative; overflow: hidden;
+      background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a, #1e3a8a, #0f172a) !important;
+      background-size: 400% 400% !important;
+      animation: headerGradientMove 18s ease infinite, fadeIn 0.4s ease-out !important;
+    }
+    @keyframes headerGradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    header::before { content: ''; position: absolute; top: 0; left: -150%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent 0%, rgba(96, 165, 250, 0.08) 30%, rgba(147, 197, 253, 0.18) 50%, rgba(96, 165, 250, 0.08) 70%, transparent 100%); animation: headerShimmer 8s ease-in-out infinite; pointer-events: none; z-index: 1; }
+    @keyframes headerShimmer { 0% { left: -150%; } 50% { left: 100%; } 100% { left: 100%; } }
+    header::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.25) 0px, transparent 3px), radial-gradient(circle at 45% 20%, rgba(96, 165, 250, 0.2) 0px, transparent 2px), radial-gradient(circle at 75% 70%, rgba(147, 197, 253, 0.22) 0px, transparent 3px), radial-gradient(circle at 90% 30%, rgba(59, 130, 246, 0.18) 0px, transparent 2px), radial-gradient(circle at 30% 80%, rgba(96, 165, 250, 0.2) 0px, transparent 2px); background-size: 200% 200%; animation: headerParticles 25s linear infinite; pointer-events: none; opacity: 0.7; z-index: 1; }
+    @keyframes headerParticles { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+    header > * { position: relative; z-index: 2; }
+    header .bg-blue-600 { position: relative; animation: logoGlow 3s ease-in-out infinite; }
+    @keyframes logoGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4), 0 0 12px 0 rgba(59, 130, 246, 0.3); } 50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0), 0 0 20px 4px rgba(59, 130, 246, 0.5); } }
+    header button { position: relative; z-index: 3; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    header button::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), transparent 60%); opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+    header button:hover::before { opacity: 1; }
+    header h1 { background: linear-gradient(90deg, #ffffff, #93c5fd, #ffffff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: titleShine 6s linear infinite; }
+    @keyframes titleShine { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+    body.dark-mode header { background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a, #1e3a8a, #0f172a) !important; background-size: 400% 400% !important; }
+    @media print { header { animation: none !important; background: #ffffff !important; } header::before, header::after { display: none !important; } }
+    @media (prefers-reduced-motion: reduce) { header, header::before, header::after, header .bg-blue-600, header h1 { animation: none !important; } }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col">
+
+  <header class="bg-slate-900 text-white px-6 py-4 shadow-md no-print flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+      <div id="headerLogoContainer" class="bg-blue-600 p-2.5 rounded-lg text-white">
+        <i class="fa-solid fa-file-signature text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">Generator Surat Sekolah</h1>
+        <p class="text-xs text-slate-400">Create, Customize, Print, & unduh PDF sesuai format</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-2 flex-wrap gap-1">
+      <button onclick="undoAction()" id="btnUndo" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700" title="Undo (Ctrl+Z)">
+        <i class="fa-solid fa-rotate-left text-blue-400"></i>
+      </button>
+      <button onclick="redoAction()" id="btnRedo" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700" title="Redo (Ctrl+Y)">
+        <i class="fa-solid fa-rotate-right text-blue-400"></i>
+      </button>
+      <button onclick="toggleFocusMode()" id="btnFocusMode" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700" title="Mode Fokus (F)">
+        <i class="fa-solid fa-expand text-emerald-400"></i> Fokus
+      </button>
+      <button onclick="bukaModalRiwayat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Riwayat
+      </button>
+      <button onclick="bukaModalTemplate()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-layer-group text-purple-400"></i> Template
+      </button>
+      <button id="btnThemeToggle" onclick="toggleTheme()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-moon text-slate-300"></i> Mode Gelap
+      </button>
+      <button onclick="muatContohData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Contoh
+      </button>
+      <button onclick="resetForm()" class="text-xs bg-red-900/40 hover:bg-red-800/50 text-red-300 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-red-800/50">
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+      <button id="btnOpenSettings" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-md transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-gear text-slate-300"></i> Pengaturan
+      </button>
+    </div>
+  </header>
+
+  <!-- Profile Switcher Bar -->
+  <div class="bg-slate-700 text-white px-6 py-2 no-print flex items-center justify-between text-xs border-b border-slate-600">
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-school text-amber-400"></i>
+      <span class="font-semibold">Profil Sekolah:</span>
+      <select id="profilAktif" onchange="switchProfil()" class="bg-slate-800 border border-slate-600 text-white px-3 py-1 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Belum ada profil --</option>
+      </select>
+      <button onclick="bukaModalProfil()" class="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-[10px] transition">
+        <i class="fa-solid fa-plus"></i> Kelola Profil
+      </button>
+    </div>
+    <div class="text-[10px] text-slate-400 hidden md:block">
+      <i class="fa-solid fa-keyboard"></i> Shortcut: <span class="kbd">Ctrl+S</span> Simpan · <span class="kbd">Ctrl+P</span> Cetak · <span class="kbd">F</span> Fokus · <span class="kbd">?</span> Bantuan
+    </div>
+  </div>
+
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-6 max-w-[1700px] mx-auto w-full">
+
+    <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col no-print max-h-[calc(100vh-140px)] overflow-hidden left-panel">
+      
+      <div class="bg-slate-50 px-5 py-3.5 border-b border-slate-200 flex justify-between items-center panel-header">
+        <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-blue-600"></i> Pengaturan Surat
+        </h2>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded font-mono">Live Preview</span>
+        </div>
+      </div>
+
+      <div class="px-4 py-2.5 bg-blue-50/50 border-b border-blue-100 flex flex-wrap items-center gap-2">
+        <button onclick="simpanSurat()" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i class="fa-solid fa-floppy-disk"></i> Simpan Surat
+        </button>
+        <button onclick="duplikasiSurat()" class="text-[11px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-md transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i class="fa-solid fa-copy"></i> Duplikasi
+        </button>
+        <button onclick="exportData()" class="text-[11px] bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i class="fa-solid fa-download"></i> Export JSON
+        </button>
+        <button onclick="document.getElementById('importFile').click()" class="text-[11px] bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i class="fa-solid fa-upload"></i> Import JSON
+        </button>
+        <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="hidden">
+      </div>
+
+      <div class="p-5 overflow-y-auto flex-1 space-y-6 text-xs">
+
+        <div class="space-y-3 pb-4 border-b border-slate-100 section-border">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-700 uppercase tracking-wide text-[11px] text-blue-700 flex items-center gap-1.5 section-title">
+              <i class="fa-solid fa-building-columns"></i> 1. Kop & Identitas Sekolah
+            </h3>
+            <button onclick="bukaModalKop()" class="text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition flex items-center gap-1">
+              <i class="fa-solid fa-pen"></i> Edit Kop
+            </button>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Logo Sekolah</label>
+            <input type="file" id="logoInput" accept="image/*" onchange="loadLogo(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-md mb-1.5">
+            <input type="text" id="logoUrl" placeholder="Atau tempel URL gambar logo (https://...)" oninput="loadLogoUrl()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Instansi Atas (Opsional)</label>
+              <input type="text" id="instansiTinggi" value="PEMERINTAH PROVINSI JAWA BARAT" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Dinas / Yayasan</label>
+              <input type="text" id="instansiDinas" value="DINAS PENDIDIKAN" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Nama Sekolah / Lembaga</label>
+            <input type="text" id="namaSekolah" value="SMK AL-HADIID 1 CILEUNGSI" class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-semibold focus:ring-1 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Alamat Jalan & Telp</label>
+            <input type="text" id="alamatSekolah" value="Jl. Melati 1 Perumahan Cileungsi Indah. Cileungsi Kabupaten Bogor" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Email & Website</label>
+            <input type="text" id="kontakSekolah" value="Email: alhadiidmedia@gmail.com | Web: https://alhadiid.or.id/" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-3 pb-4 border-b border-slate-100 section-border">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-700 uppercase tracking-wide text-[11px] text-blue-700 flex items-center gap-1.5 section-title">
+              <i class="fa-regular fa-file-lines"></i> 2. Jenis & Format Surat
+            </h3>
+            <button onclick="generateNomorOtomatis()" class="text-[10px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded transition flex items-center gap-1">
+              <i class="fa-solid fa-rotate"></i> Nomor Otomatis
+            </button>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Pilih Jenis Surat</label>
+            <select id="jenisSurat" onchange="updateTemplateByJenis()" class="w-full px-2.5 py-1.5 border border-blue-300 bg-blue-50/40 font-semibold text-blue-900 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+              <option value="undangan">Surat Undangan Official</option>
+              <option value="pemberitahuan">Surat Pemberitahuan</option>
+              <option value="keterangan">Surat Keterangan Siswa</option>
+              <option value="tugas">Surat Tugas Guru / Staf</option>
+              <option value="izin">Surat Permohonan Izin / Tempat</option>
+              <option value="pkl">Surat Pengantar PKL</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Nomor Surat</label>
+              <input type="text" id="nomorSurat" value="421.3/088/SMAN1/2026" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Tanggal Surat</label>
+              <input type="date" id="tanggalSurat" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2" id="rowLampiranPerihal">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Lampiran</label>
+              <input type="text" id="lampiran" value="1 (Satu) Berkas" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Perihal</label>
+              <input type="text" id="perihal" value="Undangan Rapat Orang Tua Siswa" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1" id="lblKepada">Kepada Yth.</label>
+            <textarea id="kepada" rows="2" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none">Bapak/Ibu Orang Tua / Wali Murid
+Siswa Kelas XII
+di Tempat</textarea>
+          </div>
+        </div>
+
+        <div class="space-y-3 pb-4 border-b border-slate-100 section-border">
+          <h3 class="font-bold text-slate-700 uppercase tracking-wide text-[11px] text-blue-700 flex items-center gap-1.5 section-title">
+            <i class="fa-solid fa-list-check"></i> 3. Data Detail (Siswa / Personil / Acara)
+          </h3>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Nama Siswa / Guru / Staf</label>
+              <input type="text" id="namaSiswa" placeholder="Contoh: Muhammad Rizky" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">NIS / NISN / NIP</label>
+              <input type="text" id="nis" placeholder="12345678" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Kelas / Jabatan</label>
+              <input type="text" id="kelas" placeholder="XII MIPA 1" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Hari / Tanggal Kegiatan</label>
+              <input type="text" id="hariTanggal" placeholder="Senin, 12 Oktober 2026" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Waktu WJB / Jam</label>
+              <input type="text" id="waktu" placeholder="08.00 - 12.00 WIB" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Tempat / Ruang</label>
+              <input type="text" id="tempat" placeholder="Aula Utama SMAN 1 Nusantara" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3 pb-4 border-b border-slate-100 section-border">
+          <h3 class="font-bold text-slate-700 uppercase tracking-wide text-[11px] text-blue-700 flex items-center gap-1.5 section-title">
+            <i class="fa-solid fa-align-left"></i> 4. Isi & Penutup Surat
+          </h3>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Paragraf Pembuka & Isi</label>
+            <textarea id="isiSurat" rows="4" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">Sehubungan dengan persiapan pelaksanaan Ujian Akhir Semester (UAS) dan sosialisasi program kelulusan, kami mengharapkan kehadiran Bapak/Ibu Orang Tua/Wali Murid pada acara rapat koordinasi yang akan dilaksanakan pada:</textarea>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Paragraf Penutup</label>
+            <textarea id="penutup" rows="3" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">Mengingat pentingnya acara tersebut, kami memohon kehadiran Bapak/Ibu tepat pada waktunya. Atas perhatian dan kerja sama yang baik, kami ucapkan terima kasih.</textarea>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="font-bold text-slate-700 uppercase tracking-wide text-[11px] text-blue-700 flex items-center gap-1.5 section-title">
+            <i class="fa-solid fa-pen-nib"></i> 5. Pejabat Penandatangan
+          </h3>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Kota Penerbitan</label>
+              <input type="text" id="kotaSurat" value="Jakarta" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Jabatan Penandatangan</label>
+              <input type="text" id="jabatanKepsek" value="Kepala Sekolah," class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Nama Kepala Sekolah / Pejabat</label>
+              <input type="text" id="kepsek" value="Dr. Budi Santoso, M.Pd." class="w-full px-2.5 py-1.5 border border-slate-300 rounded font-semibold focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">NIP Pejabat</label>
+              <input type="text" id="nipKepsek" value="19750815 200003 1 002" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Stempel & Tanda Tangan Aktif</label>
+            <select id="stampAktif" onchange="applyStampSelection()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none mb-2">
+              <option value="">-- Tidak ada --</option>
+            </select>
+            <button onclick="bukaModalStamps()" class="w-full text-[11px] bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-md transition flex items-center justify-center gap-1.5 font-medium border border-purple-200">
+              <i class="fa-solid fa-stamp"></i> Kelola Stempel & TTD
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-3 action-footer">
+        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-lg font-semibold text-xs transition shadow flex items-center justify-center gap-2">
+          <i class="fa-solid fa-print"></i> Cetak Dokumen
+        </button>
+        <button id="btnDownloadPdf" onclick="simpanPDF()" class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-semibold text-xs transition shadow flex items-center justify-center gap-2">
+          <i class="fa-solid fa-file-pdf"></i> Unduh PDF
+        </button>
+      </div>
+
+    </div>
+
+    <div class="lg:col-span-7 bg-slate-600 rounded-xl p-4 md:p-8 flex flex-col items-center overflow-y-auto max-h-[calc(100vh-140px)] shadow-inner preview-container">
+      
+      <div class="w-full max-w-[210mm] mb-3 flex items-center justify-between text-slate-200 text-xs no-print">
+        <span class="flex items-center gap-1.5 font-medium">
+          <i class="fa-solid fa-eye"></i> Format Lembar A4 (Standard Print)
+        </span>
+        <span class="text-slate-400">Siap Cetak / Eksport PDF</span>
+      </div>
+
+      <div id="preview" class="a4-paper">
+        <div id="watermarkContainer" class="watermark-container" style="display: none;"></div>
+
+        <div class="kop-header">
+          <div class="logo-box">
+            <img id="imgLogo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f1f5f9' stroke='%2394a3b8' stroke-width='2'/><path d='M30 65 L50 30 L70 65 Z' fill='%232563eb'/><text x='50%' y='82%' font-size='10' font-weight='bold' text-anchor='middle' fill='%23475569'>SEKOLAH</text></svg>" alt="Logo Sekolah">
+          </div>
+          <div class="kop-text">
+            <div class="instansi-tinggi" id="pInstansiTinggi">PEMERINTAH PROVINSI DKI JAKARTA</div>
+            <div class="instansi-dinas" id="pInstansiDinas">DINAS PENDIDIKAN</div>
+            <div class="nama-sekolah" id="pNamaSekolah">SMA NEGERI 1 NUSANTARA</div>
+            <div class="alamat-kontak" id="pAlamatSekolah">Jl. Pendidikan No. 123, Jakarta Selatan</div>
+            <div class="alamat-kontak" id="pKontakSekolah">Email: info@sman1nusantara.sch.id</div>
+          </div>
+        </div>
+
+        <div id="suratContent"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal Template -->
+  <div id="modalTemplate" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-layer-group text-purple-600"></i> Pilih Template Surat
+        </h3>
+        <button onclick="tutupModal('modalTemplate')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6" id="templateList"></div>
+    </div>
+  </div>
+
+  <!-- Modal Riwayat -->
+  <div id="modalRiwayat" class="modal-overlay">
+    <div class="modal-content" style="max-width: 1000px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-cyan-600"></i> Riwayat Surat Tersimpan
+        </h3>
+        <button onclick="tutupModal('modalRiwayat')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6">
+        <div class="mb-4 relative">
+          <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="searchRiwayat" oninput="renderRiwayat()" placeholder="Cari surat..." class="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div id="riwayatList" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kop -->
+  <div id="modalKop" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-building-columns text-blue-600"></i> Edit Kop Surat
+        </h3>
+        <button onclick="tutupModal('modalKop')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6 space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Warna Garis Kop</label>
+            <input type="color" id="warnaKop" value="#000000" class="w-full h-10 border border-slate-300 rounded cursor-pointer" onchange="terapkanKop()">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Ukuran Logo (px)</label>
+            <input type="number" id="ukuranLogo" value="85" min="40" max="150" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" onchange="terapkanKop()">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Gaya Garis Kop</label>
+          <select id="gayaGarisKop" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" onchange="terapkanKop()">
+            <option value="4px double #000000">Double Line (Standar)</option>
+            <option value="3px solid #000000">Solid Line</option>
+            <option value="2px dashed #000000">Dashed Line</option>
+            <option value="4px ridge #000000">Ridge Line</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Ukuran Font Nama Sekolah (pt)</label>
+          <input type="number" id="ukuranFontSekolah" value="16" min="12" max="24" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" onchange="terapkanKop()">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="tutupModal('modalKop')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-xs transition">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal TTD Digital -->
+  <div id="modalTTD" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-signature text-indigo-600"></i> Gambar Tanda Tangan Digital
+        </h3>
+        <button onclick="tutupModal('modalTTD')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6">
+        <p class="text-xs text-slate-500 mb-3">Gambar tanda tangan Anda di area di bawah ini.</p>
+        <canvas id="signaturePad" width="500" height="200" class="w-full"></canvas>
+        <div class="flex justify-between items-center mt-4">
+          <button onclick="clearSignature()" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-eraser"></i> Hapus
+          </button>
+          <div class="flex gap-2">
+            <button onclick="tutupModal('modalTTD')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-xs transition">Batal</button>
+            <button onclick="simpanSignature()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-check"></i> Simpan ke Koleksi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pilih Contoh -->
+  <div id="modalPilihContoh" class="modal-overlay">
+    <div class="modal-content" style="max-width: 780px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Pilih Contoh Data Surat
+        </h3>
+        <button onclick="tutupModal('modalPilihContoh')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="pilihContohList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi -->
+  <div id="modalKonfirmasi" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> <span id="konfirmasiJudul">Konfirmasi</span>
+        </h3>
+      </div>
+      <div class="modal-body p-6">
+        <p id="konfirmasiPesan" class="text-sm text-slate-600 mb-5">Apakah Anda yakin?</p>
+        <div class="flex justify-end gap-2">
+          <button onclick="tutupModal('modalKonfirmasi')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-xs transition">Batal</button>
+          <button id="konfirmasiYaBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-xs transition">Ya, Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bantuan Shortcut -->
+  <div id="modalShortcut" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-keyboard text-blue-600"></i> Daftar Shortcut Keyboard
+        </h3>
+        <button onclick="tutupModal('modalShortcut')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6 text-xs">
+        <table class="w-full">
+          <tbody>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+S</span></td><td class="py-2 text-slate-600">Simpan Surat</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+P</span></td><td class="py-2 text-slate-600">Cetak Dokumen</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+D</span></td><td class="py-2 text-slate-600">Download PDF</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+N</span></td><td class="py-2 text-slate-600">Reset Form</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+Z</span></td><td class="py-2 text-slate-600">Undo</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Ctrl+Y</span></td><td class="py-2 text-slate-600">Redo</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">F</span></td><td class="py-2 text-slate-600">Mode Fokus</td></tr>
+            <tr class="border-b border-slate-100"><td class="py-2"><span class="kbd">Esc</span></td><td class="py-2 text-slate-600">Tutup Modal</td></tr>
+            <tr><td class="py-2"><span class="kbd">?</span></td><td class="py-2 text-slate-600">Bantuan</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Profil Multi-Sekolah -->
+  <div id="modalProfil" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-school text-amber-600"></i> Kelola Profil Sekolah
+        </h3>
+        <button onclick="tutupModal('modalProfil')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6 text-xs">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-[11px] text-blue-800 flex items-start gap-2">
+          <i class="fa-solid fa-circle-info mt-0.5"></i>
+          <span>Simpan profil sekolah berbeda. Klik "Gunakan" untuk beralih profil.</span>
+        </div>
+        
+        <div id="profilList" class="space-y-3 mb-4"></div>
+
+        <div class="border-t border-slate-200 pt-4">
+          <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-plus-circle"></i> Tambah Profil dari Data Saat Ini</h4>
+          <div class="flex gap-2">
+            <input type="text" id="profilNamaBaru" placeholder="Nama profil" class="flex-1 px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <button onclick="simpanProfilBaru()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition">
+              <i class="fa-solid fa-save"></i> Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Stamps Collection -->
+  <div id="modalStamps" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-stamp text-purple-600"></i> Koleksi Stempel & TTD
+        </h3>
+        <button onclick="tutupModal('modalStamps')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6 text-xs">
+        <div id="stampList" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4"></div>
+        <div class="border-t border-slate-200 pt-4">
+          <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-plus-circle"></i> Tambah Stempel/TTD Baru</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <input type="text" id="stampNama" placeholder="Nama (contoh: Stempel Kepsek)" class="px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <select id="stampTipe" class="px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+              <option value="ttd">Tanda Tangan</option>
+              <option value="stempel">Stempel</option>
+            </select>
+          </div>
+          <input type="file" id="stampFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-md mb-3">
+          <div class="flex gap-2">
+            <button onclick="bukaModalTTD()" class="flex-1 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded font-semibold transition text-[11px]">
+              <i class="fa-solid fa-signature"></i> Gambar Manual
+            </button>
+            <button onclick="simpanStampBaru()" class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold transition text-[11px]">
+              <i class="fa-solid fa-save"></i> Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PENGATURAN UTAMA -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 720px;">
+      <div class="modal-header flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-gear text-slate-600"></i> Pengaturan Aplikasi
+        </h3>
+        <button onclick="tutupModal('settingsModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body p-6 space-y-5 text-xs max-h-[70vh] overflow-y-auto">
+
+        <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-lg sticky top-0 z-10">
+          <button onclick="switchTab('tabTampilan')" id="btnTabTampilan" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition bg-white text-blue-700 shadow-sm">
+            <i class="fa-solid fa-palette"></i> Tampilan
+          </button>
+          <button onclick="switchTab('tabDefault')" id="btnTabDefault" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition text-slate-600 hover:text-slate-800">
+            <i class="fa-solid fa-school"></i> Default
+          </button>
+          <button onclick="switchTab('tabNomor')" id="btnTabNomor" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition text-slate-600 hover:text-slate-800">
+            <i class="fa-solid fa-hashtag"></i> Nomor
+          </button>
+          <button onclick="switchTab('tabKertas')" id="btnTabKertas" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition text-slate-600 hover:text-slate-800">
+            <i class="fa-solid fa-file-lines"></i> Kertas
+          </button>
+          <button onclick="switchTab('tabWatermark')" id="btnTabWatermark" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition text-slate-600 hover:text-slate-800">
+            <i class="fa-solid fa-stamp"></i> Watermark
+          </button>
+          <button onclick="switchTab('tabBackup')" id="btnTabBackup" class="flex-1 min-w-[80px] py-2 px-2 rounded-md text-[10px] font-semibold transition text-slate-600 hover:text-slate-800">
+            <i class="fa-solid fa-database"></i> Backup
+          </button>
+        </div>
+
+        <!-- TAB: TAMPILAN -->
+        <div id="tabTampilan" class="space-y-5">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-2">Logo Website</label>
+            <div class="flex items-center gap-4">
+              <div id="previewLogoHeader" class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white flex-shrink-0 overflow-hidden">
+                <i class="fa-solid fa-file-signature text-xl"></i>
+              </div>
+              <div class="flex-1">
+                <input type="file" id="inputLogoWebsite" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-md">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-2">Warna Tema Utama</label>
+            <div class="flex items-center gap-3">
+              <input type="color" id="inputTemaColor" value="#2563eb" class="w-12 h-10 border border-slate-300 rounded cursor-pointer">
+              <span id="colorHexValue" class="font-mono text-slate-500 text-sm">#2563eb</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: DEFAULT SEKOLAH -->
+        <div id="tabDefault" class="space-y-4" style="display: none;">
+          <div><label class="block font-semibold text-slate-600 mb-1">Instansi Atas</label>
+            <input type="text" id="defInstansiTinggi" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Dinas / Yayasan</label>
+            <input type="text" id="defInstansiDinas" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Nama Sekolah</label>
+            <input type="text" id="defNamaSekolah" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Alamat</label>
+            <input type="text" id="defAlamat" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Email & Website</label>
+            <input type="text" id="defKontak" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Nama Kepsek</label>
+              <input type="text" id="defKepsek" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">NIP</label>
+              <input type="text" id="defNipKepsek" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          </div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Kota Penerbitan</label>
+            <input type="text" id="defKota" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          <label class="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <input type="checkbox" id="defAutoApply" class="w-4 h-4 text-blue-600 rounded">
+            <span class="font-semibold text-slate-700">Terapkan otomatis saat dibuka</span>
+          </label>
+        </div>
+
+        <!-- TAB: NOMOR SURAT -->
+        <div id="tabNomor" class="space-y-4" style="display: none;">
+          <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-[11px] text-indigo-800">
+            <i class="fa-solid fa-circle-info"></i> Placeholder: <code>{KODE}</code> <code>{URUT}</code> <code>{SEKOLAH}</code> <code>{TAHUN}</code> <code>{BULAN}</code>
+          </div>
+          <div><label class="block font-semibold text-slate-600 mb-1">Pola Nomor</label>
+            <input type="text" id="nomorPola" value="{KODE}/{URUT}/{SEKOLAH}/{TAHUN}" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Kode Sekolah</label>
+              <input type="text" id="nomorKodeSekolah" value="SMAN1" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Urut Berikutnya</label>
+              <input type="number" id="nomorUrutNext" value="89" min="1" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Kode Undangan</label>
+              <input type="text" id="kodeUndangan" value="421.3" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Kode Tugas</label>
+              <input type="text" id="kodeTugas" value="090" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Kode Izin</label>
+              <input type="text" id="kodeIzin" value="005" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Kode PKL</label>
+              <input type="text" id="kodePkl" value="421.5" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono text-xs"></div>
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <input type="checkbox" id="nomorResetTahunan" class="w-4 h-4 text-blue-600 rounded" checked>
+            <span class="font-semibold text-slate-700">Reset nomor setiap tahun baru</span>
+          </label>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="font-semibold text-slate-600 mb-1">Preview:</div>
+            <div id="previewNomor" class="font-mono text-sm text-blue-700">421.3/089/SMAN1/2026</div>
+          </div>
+        </div>
+
+        <!-- TAB: KERTAS -->
+        <div id="tabKertas" class="space-y-4" style="display: none;">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[11px] text-emerald-800">
+            <i class="fa-solid fa-circle-info"></i> Atur margin (mm) dan font default A4.
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Margin Atas (mm)</label>
+              <input type="number" id="marginAtas" value="20" min="5" max="50" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Margin Bawah (mm)</label>
+              <input type="number" id="marginBawah" value="20" min="5" max="50" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Margin Kiri (mm)</label>
+              <input type="number" id="marginKiri" value="20" min="5" max="50" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Margin Kanan (mm)</label>
+              <input type="number" id="marginKanan" value="20" min="5" max="50" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Font Size (pt)</label>
+              <select id="fontSizeDefault" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                <option value="10">10 pt</option>
+                <option value="11">11 pt</option>
+                <option value="12" selected>12 pt</option>
+                <option value="13">13 pt</option>
+                <option value="14">14 pt</option>
+              </select></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Font Family</label>
+              <select id="fontFamilyDefault" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                <option value="Times New Roman, Times, serif" selected>Times New Roman</option>
+                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                <option value="'Calibri', sans-serif">Calibri</option>
+                <option value="Cambria, serif">Cambria</option>
+                <option value="'Georgia', serif">Georgia</option>
+              </select></div>
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <input type="checkbox" id="modeHematKertas" class="w-4 h-4 text-blue-600 rounded">
+            <span class="font-semibold text-slate-700">Mode Hemat Kertas (margin 15mm)</span>
+          </label>
+        </div>
+
+        <!-- TAB: WATERMARK -->
+        <div id="tabWatermark" class="space-y-4" style="display: none;">
+          <label class="flex items-center gap-2 cursor-pointer p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <input type="checkbox" id="wmAktif" class="w-4 h-4 text-blue-600 rounded">
+            <span class="font-semibold text-slate-700">Aktifkan Watermark</span>
+          </label>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-2">Tipe</label>
+            <div class="flex gap-2">
+              <label class="flex-1 cursor-pointer"><input type="radio" name="wmTipe" value="text" checked class="hidden peer" onchange="updateWmTipe()">
+                <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-slate-100 text-slate-600 py-2 px-3 rounded-lg text-center font-semibold text-xs transition"><i class="fa-solid fa-font"></i> Teks</div></label>
+              <label class="flex-1 cursor-pointer"><input type="radio" name="wmTipe" value="image" class="hidden peer" onchange="updateWmTipe()">
+                <div class="peer-checked:bg-blue-600 peer-checked:text-white bg-slate-100 text-slate-600 py-2 px-3 rounded-lg text-center font-semibold text-xs transition"><i class="fa-solid fa-image"></i> Gambar</div></label>
+            </div>
+          </div>
+          <div id="wmTeksSection">
+            <label class="block font-semibold text-slate-600 mb-1">Teks Watermark</label>
+            <input type="text" id="wmTeks" value="DRAFT" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div id="wmGambarSection" style="display: none;">
+            <label class="block font-semibold text-slate-600 mb-1">Upload Gambar (PNG)</label>
+            <input type="file" id="wmGambar" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-slate-200 rounded-md">
+            <div id="wmPreviewGambar" class="mt-2 hidden"><img id="wmPreviewImg" class="max-h-20 rounded border border-slate-200"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block font-semibold text-slate-600 mb-1">Opacity: <span id="wmOpacityVal">15</span>%</label>
+              <input type="range" id="wmOpacity" min="1" max="100" value="15" class="w-full" oninput="document.getElementById('wmOpacityVal').textContent=this.value"></div>
+            <div><label class="block font-semibold text-slate-600 mb-1">Rotasi: <span id="wmRotasiVal">-30</span>°</label>
+              <input type="range" id="wmRotasi" min="-90" max="90" value="-30" class="w-full" oninput="document.getElementById('wmRotasiVal').textContent=this.value"></div>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Posisi</label>
+            <select id="wmPosisi" class="w-full px-2.5 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+              <option value="center">Tengah</option>
+              <option value="corner">Sudut Kiri Atas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TAB: BACKUP -->
+        <div id="tabBackup" class="space-y-4" style="display: none;">
+          <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+            <h4 class="font-bold text-slate-700 mb-2"><i class="fa-solid fa-info-circle text-blue-600"></i> Info Data</h4>
+            <div class="space-y-1 text-[11px] text-slate-600">
+              <div>Total surat: <span id="infoTotalSurat" class="font-bold">0</span></div>
+              <div>Total profil: <span id="infoTotalProfil" class="font-bold">0</span></div>
+              <div>Total stempel: <span id="infoTotalStamp" class="font-bold">0</span></div>
+              <div>Ukuran data: <span id="infoUkuranData" class="font-bold">0 KB</span></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="backupSekarang()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-download"></i> Backup Sekarang
+            </button>
+            <button onclick="document.getElementById('restoreFile').click()" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-upload"></i> Restore
+            </button>
+            <input type="file" id="restoreFile" accept=".json" onchange="restoreBackup(event)" class="hidden">
+          </div>
+
+          <div class="border-t border-red-200 pt-4">
+            <h4 class="font-bold text-red-600 mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Zona Berbahaya</h4>
+            <button onclick="resetSemuaData()" class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-xs transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-trash"></i> Reset Semua Data
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 sticky bottom-0 bg-white">
+          <button onclick="tutupModal('settingsModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-xs transition">Batal</button>
+          <button id="btnSaveSettings" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-check"></i> Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 z-[200] transform translate-y-20 opacity-0 transition-all duration-300">
+    <div class="bg-slate-800 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 text-sm">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span id="toastMessage">Berhasil!</span>
+    </div>
+  </div>
+
+  <script>
+    let logoBase64 = null;
+    let ttdBase64 = null;
+    let signaturePad = null;
+    let konfirmasiCallback = null;
+    let undoStack = [];
+    let redoStack = [];
+    let lastFormState = '';
+
+    window.onload = function() {
+      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+      updateThemeButton();
+
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('tanggalSurat').value = today;
+      
+      const inputs = document.querySelectorAll('input, select, textarea');
+      inputs.forEach(input => {
+        input.addEventListener('input', () => { pushToUndo(); renderPreview(); });
+        input.addEventListener('change', () => { pushToUndo(); renderPreview(); });
+      });
+
+      initSignaturePad();
+      renderPreview();
+
+      loadAllSettings();
+      loadProfilList();
+      loadStampCollection();
+      updateBackupInfo();
+      setTimeout(captureFormState, 500);
+    };
+
+    // ===== UNDO / REDO =====
+    function captureFormState() {
+      const inputs = document.querySelectorAll('input[type="text"], input[type="date"], input[type="number"], textarea, select');
+      const state = {};
+      inputs.forEach(i => { if (i.id) state[i.id] = i.value; });
+      return JSON.stringify(state);
+    }
+    function pushToUndo() {
+      const current = captureFormState();
+      if (current !== lastFormState && lastFormState) {
+        undoStack.push(lastFormState);
+        if (undoStack.length > 30) undoStack.shift();
+        redoStack = [];
+      }
+      lastFormState = current;
+    }
+    function restoreFormState(stateStr) {
+      try {
+        const state = JSON.parse(stateStr);
+        Object.keys(state).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = state[id];
+        });
+        renderPreview();
+      } catch(e) { console.error(e); }
+    }
+    function undoAction() {
+      if (undoStack.length === 0) { tampilkanToast('Tidak ada yang bisa di-undo', 'warning'); return; }
+      const current = captureFormState();
+      redoStack.push(current);
+      const prev = undoStack.pop();
+      restoreFormState(prev);
+      lastFormState = prev;
+      tampilkanToast('Undo berhasil');
+    }
+    function redoAction() {
+      if (redoStack.length === 0) { tampilkanToast('Tidak ada yang bisa di-redo', 'warning'); return; }
+      const current = captureFormState();
+      undoStack.push(current);
+      const next = redoStack.pop();
+      restoreFormState(next);
+      lastFormState = next;
+      tampilkanToast('Redo berhasil');
+    }
+
+    // ===== MODE FOKUS =====
+    function toggleFocusMode() {
+      document.body.classList.toggle('focus-mode');
+      const isFocus = document.body.classList.contains('focus-mode');
+      const btn = document.getElementById('btnFocusMode');
+      btn.innerHTML = isFocus 
+        ? '<i class="fa-solid fa-compress text-emerald-400"></i> Keluar Fokus'
+        : '<i class="fa-solid fa-expand text-emerald-400"></i> Fokus';
+      localStorage.setItem('focusMode', isFocus ? 'on' : 'off');
+      tampilkanToast(isFocus ? 'Mode Fokus Aktif' : 'Mode Fokus Nonaktif');
+    }
+
+    // ===== SHORTCUT =====
+    document.addEventListener('keydown', function(e) {
+      const isInputField = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 's') { e.preventDefault(); simpanSurat(); }
+        else if (e.key === 'p') { e.preventDefault(); window.print(); }
+        else if (e.key === 'd') { e.preventDefault(); simpanPDF(); }
+        else if (e.key === 'n') { e.preventDefault(); resetForm(); }
+        else if (e.key === 'z') { e.preventDefault(); undoAction(); }
+        else if (e.key === 'y') { e.preventDefault(); redoAction(); }
+      } else if (!isInputField) {
+        if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFocusMode(); }
+        else if (e.key === '?') { e.preventDefault(); document.getElementById('modalShortcut').classList.add('active'); }
+        else if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      } else if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    });
+
+    // ===== PROFIL =====
+    function loadProfilList() {
+      const list = JSON.parse(localStorage.getItem('appProfils') || '[]');
+      const select = document.getElementById('profilAktif');
+      const current = localStorage.getItem('appProfilAktif') || '';
+      select.innerHTML = '<option value="">-- Belum ada profil --</option>' + list.map((p, i) => `<option value="${i}" ${current == i ? 'selected' : ''}>${p.nama}</option>`).join('');
+      updateBackupInfo();
+    }
+    function bukaModalProfil() { renderProfilList(); document.getElementById('modalProfil').classList.add('active'); }
+    function renderProfilList() {
+      const list = JSON.parse(localStorage.getItem('appProfils') || '[]');
+      const container = document.getElementById('profilList');
+      if (list.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-4 text-xs">Belum ada profil.</p>'; return; }
+      container.innerHTML = list.map((p, i) => `<div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"><div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">${p.logo ? `<img src="${p.logo}" class="w-full h-full object-contain">` : '<i class="fa-solid fa-school text-blue-600"></i>'}</div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 text-xs">${p.nama}</h4><p class="text-[10px] text-slate-500 truncate">${p.namaSekolah || '-'}</p></div><button onclick="gunakanProfil(${i})" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition"><i class="fa-solid fa-check"></i> Gunakan</button><button onclick="hapusProfil(${i})" class="w-7 h-7 bg-red-100 hover:bg-red-200 text-red-600 rounded flex items-center justify-center transition"><i class="fa-solid fa-trash text-xs"></i></button></div>`).join('');
+    }
+    function simpanProfilBaru() {
+      const nama = document.getElementById('profilNamaBaru').value.trim();
+      if (!nama) { tampilkanToast('Nama profil harus diisi', 'warning'); return; }
+      const profil = { nama, instansiTinggi: document.getElementById('instansiTinggi').value, instansiDinas: document.getElementById('instansiDinas').value, namaSekolah: document.getElementById('namaSekolah').value, alamatSekolah: document.getElementById('alamatSekolah').value, kontakSekolah: document.getElementById('kontakSekolah').value, kepsek: document.getElementById('kepsek').value, nipKepsek: document.getElementById('nipKepsek').value, jabatanKepsek: document.getElementById('jabatanKepsek').value, kotaSurat: document.getElementById('kotaSurat').value, logo: logoBase64 || '' };
+      const list = JSON.parse(localStorage.getItem('appProfils') || '[]');
+      list.push(profil);
+      localStorage.setItem('appProfils', JSON.stringify(list));
+      document.getElementById('profilNamaBaru').value = '';
+      renderProfilList();
+      loadProfilList();
+      updateBackupInfo();
+      tampilkanToast(`Profil "${nama}" disimpan`);
+    }
+    function gunakanProfil(index) {
+      const list = JSON.parse(localStorage.getItem('appProfils') || '[]');
+      const p = list[index];
+      if (!p) return;
+      document.getElementById('instansiTinggi').value = p.instansiTinggi || '';
+      document.getElementById('instansiDinas').value = p.instansiDinas || '';
+      document.getElementById('namaSekolah').value = p.namaSekolah || '';
+      document.getElementById('alamatSekolah').value = p.alamatSekolah || '';
+      document.getElementById('kontakSekolah').value = p.kontakSekolah || '';
+      document.getElementById('kepsek').value = p.kepsek || '';
+      document.getElementById('nipKepsek').value = p.nipKepsek || '';
+      document.getElementById('jabatanKepsek').value = p.jabatanKepsek || '';
+      document.getElementById('kotaSurat').value = p.kotaSurat || '';
+      if (p.logo) { logoBase64 = p.logo; document.getElementById('imgLogo').src = p.logo; }
+      localStorage.setItem('appProfilAktif', index);
+      document.getElementById('profilAktif').value = index;
+      renderPreview();
+      tutupModal('modalProfil');
+      tampilkanToast(`Profil "${p.nama}" diterapkan`);
+    }
+    function hapusProfil(index) {
+      tampilkanKonfirmasi('Hapus Profil', 'Yakin?', () => {
+        const list = JSON.parse(localStorage.getItem('appProfils') || '[]');
+        list.splice(index, 1);
+        localStorage.setItem('appProfils', JSON.stringify(list));
+        localStorage.removeItem('appProfilAktif');
+        renderProfilList();
+        loadProfilList();
+        updateBackupInfo();
+        tampilkanToast('Profil dihapus');
+      });
+    }
+    function switchProfil() {
+      const val = document.getElementById('profilAktif').value;
+      if (val === '') return;
+      gunakanProfil(parseInt(val));
+    }
+
+    // ===== STAMPS =====
+    function loadStampCollection() {
+      const stamps = JSON.parse(localStorage.getItem('appStamps') || '[]');
+      const select = document.getElementById('stampAktif');
+      select.innerHTML = '<option value="">-- Tidak ada --</option>' + stamps.map((s, i) => `<option value="${i}">${s.nama} (${s.tipe})</option>`).join('');
+      updateBackupInfo();
+    }
+    function bukaModalStamps() { renderStampList(); document.getElementById('modalStamps').classList.add('active'); }
+    function renderStampList() {
+      const list = JSON.parse(localStorage.getItem('appStamps') || '[]');
+      const container = document.getElementById('stampList');
+      if (list.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-4 text-xs col-span-full">Belum ada stempel/TTD.</p>'; return; }
+      container.innerHTML = list.map((s, i) => `<div class="stamp-card" onclick="pilihStampAktif(${i})"><img src="${s.gambar}" class="max-h-16 mx-auto mb-2 object-contain"><div class="text-[10px] font-bold text-slate-700 truncate">${s.nama}</div><div class="text-[9px] text-slate-500 uppercase">${s.tipe}</div><button onclick="event.stopPropagation(); hapusStamp(${i})" class="absolute top-1 right-1 w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center text-[10px]"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+    }
+    function simpanStampBaru() {
+      const nama = document.getElementById('stampNama').value.trim();
+      const tipe = document.getElementById('stampTipe').value;
+      const fileInput = document.getElementById('stampFile');
+      if (!nama) { tampilkanToast('Nama harus diisi', 'warning'); return; }
+      if (!fileInput.files[0]) { tampilkanToast('Pilih file gambar', 'warning'); return; }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const list = JSON.parse(localStorage.getItem('appStamps') || '[]');
+        list.push({ nama, tipe, gambar: e.target.result });
+        localStorage.setItem('appStamps', JSON.stringify(list));
+        document.getElementById('stampNama').value = '';
+        fileInput.value = '';
+        renderStampList();
+        loadStampCollection();
+        updateBackupInfo();
+        tampilkanToast(`Stempel "${nama}" tersimpan`);
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    }
+    function hapusStamp(index) {
+      tampilkanKonfirmasi('Hapus Stempel', 'Yakin?', () => {
+        const list = JSON.parse(localStorage.getItem('appStamps') || '[]');
+        list.splice(index, 1);
+        localStorage.setItem('appStamps', JSON.stringify(list));
+        renderStampList();
+        loadStampCollection();
+        updateBackupInfo();
+        tampilkanToast('Stempel dihapus');
+      });
+    }
+    function pilihStampAktif(index) {
+      document.getElementById('stampAktif').value = index;
+      applyStampSelection();
+      tutupModal('modalStamps');
+    }
+    function applyStampSelection() {
+      const val = document.getElementById('stampAktif').value;
+      if (val === '') { ttdBase64 = null; renderPreview(); return; }
+      const list = JSON.parse(localStorage.getItem('appStamps') || '[]');
+      if (list[val]) { ttdBase64 = list[val].gambar; renderPreview(); tampilkanToast(`Stempel "${list[val].nama}" diterapkan`); }
+    }
+
+    // ===== BACKUP =====
+    function updateBackupInfo() {
+      const surat = JSON.parse(localStorage.getItem('suratTersimpan') || '[]');
+      const profils = JSON.parse(localStorage.getItem('appProfils') || '[]');
+      const stamps = JSON.parse(localStorage.getItem('appStamps') || '[]');
+      document.getElementById('infoTotalSurat').textContent = surat.length;
+      document.getElementById('infoTotalProfil').textContent = profils.length;
+      document.getElementById('infoTotalStamp').textContent = stamps.length;
+      let totalBytes = 0;
+      for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) totalBytes += (localStorage[key].length + key.length) * 2;
+      }
+      document.getElementById('infoUkuranData').textContent = (totalBytes / 1024).toFixed(2) + ' KB';
+    }
+    function backupSekarang() {
+      const backup = { timestamp: new Date().toISOString(), version: '2.0', data: {} };
+      for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) backup.data[key] = localStorage[key];
+      }
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_generator_surat_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      tampilkanToast('Backup berhasil diunduh');
+    }
+    function restoreBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const backup = JSON.parse(e.target.result);
+          if (!backup.data) throw new Error('Format invalid');
+          tampilkanKonfirmasi('Restore Data', 'Semua data akan diganti. Lanjutkan?', () => {
+            Object.keys(backup.data).forEach(key => localStorage.setItem(key, backup.data[key]));
+            tampilkanToast('Data di-restore! Memuat ulang...');
+            setTimeout(() => location.reload(), 1500);
+          });
+        } catch(err) { tampilkanToast('File backup tidak valid', 'error'); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+    function resetSemuaData() {
+      tampilkanKonfirmasi('RESET SEMUA DATA', 'SEMUA data akan DIHAPUS PERMANEN. Yakin?', () => {
+        localStorage.clear();
+        tampilkanToast('Semua data dihapus. Memuat ulang...');
+        setTimeout(() => location.reload(), 1500);
+      });
+    }
+
+    // ===== TAB SWITCHER =====
+    function switchTab(tabId) {
+      ['tabTampilan', 'tabDefault', 'tabNomor', 'tabKertas', 'tabWatermark', 'tabBackup'].forEach(id => {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (el) el.style.display = id === tabId ? 'block' : 'none';
+        if (btn) {
+          if (id === tabId) { btn.classList.add('bg-white', 'text-blue-700', 'shadow-sm'); btn.classList.remove('text-slate-600'); }
+          else { btn.classList.remove('bg-white', 'text-blue-700', 'shadow-sm'); btn.classList.add('text-slate-600'); }
+        }
+      });
+      if (tabId === 'tabBackup') updateBackupInfo();
+    }
+
+    // ===== WATERMARK =====
+    function updateWmTipe() {
+      const tipe = document.querySelector('input[name="wmTipe"]:checked').value;
+      document.getElementById('wmTeksSection').style.display = tipe === 'text' ? 'block' : 'none';
+      document.getElementById('wmGambarSection').style.display = tipe === 'image' ? 'block' : 'none';
+    }
+    document.getElementById('wmGambar').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('wmPreviewImg').src = event.target.result;
+          document.getElementById('wmPreviewGambar').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    function loadWatermarkSettings() {
+      const wm = JSON.parse(localStorage.getItem('appWatermark') || '{}');
+      document.getElementById('wmAktif').checked = wm.aktif || false;
+      document.getElementById('wmTeks').value = wm.teks || 'DRAFT';
+      document.getElementById('wmOpacity').value = wm.opacity || 15;
+      document.getElementById('wmOpacityVal').textContent = wm.opacity || 15;
+      document.getElementById('wmRotasi').value = wm.rotasi || -30;
+      document.getElementById('wmRotasiVal').textContent = wm.rotasi || -30;
+      document.getElementById('wmPosisi').value = wm.posisi || 'center';
+      if (wm.tipe) { const radio = document.querySelector(`input[name="wmTipe"][value="${wm.tipe}"]`); if (radio) radio.checked = true; }
+      if (wm.gambar) { document.getElementById('wmPreviewImg').src = wm.gambar; document.getElementById('wmPreviewGambar').classList.remove('hidden'); }
+      renderWatermark();
+    }
+    function renderWatermark() {
+      const wm = JSON.parse(localStorage.getItem('appWatermark') || '{}');
+      const container = document.getElementById('watermarkContainer');
+      if (!wm.aktif) { container.style.display = 'none'; container.innerHTML = ''; return; }
+      container.style.display = 'flex';
+      container.className = 'watermark-container' + (wm.posisi === 'corner' ? ' wm-corner' : '');
+      const opacity = (wm.opacity || 15) / 100;
+      const rotasi = wm.rotasi || -30;
+      if (wm.tipe === 'image' && wm.gambar) container.innerHTML = `<img src="${wm.gambar}" style="opacity: ${opacity}; transform: rotate(${rotasi}deg);">`;
+      else container.innerHTML = `<div class="wm-text" style="opacity: ${opacity}; transform: rotate(${rotasi}deg);">${wm.teks || 'DRAFT'}</div>`;
+    }
+
+    // ===== NOMOR SURAT =====
+    function updatePreviewNomor() {
+      const pola = document.getElementById('nomorPola').value;
+      const kodeSekolah = document.getElementById('nomorKodeSekolah').value;
+      const urut = document.getElementById('nomorUrutNext').value;
+      const tahun = new Date().getFullYear();
+      const bulan = String(new Date().getMonth() + 1).padStart(2, '0');
+      const jenis = document.getElementById('jenisSurat').value;
+      const kodeMap = { undangan: document.getElementById('kodeUndangan').value, pemberitahuan: document.getElementById('kodeUndangan').value, keterangan: document.getElementById('kodeUndangan').value, tugas: document.getElementById('kodeTugas').value, izin: document.getElementById('kodeIzin').value, pkl: document.getElementById('kodePkl').value };
+      const kode = kodeMap[jenis] || '421.3';
+      let hasil = pola.replace(/{KODE}/g, kode).replace(/{URUT}/g, String(urut).padStart(3, '0')).replace(/{SEKOLAH}/g, kodeSekolah).replace(/{TAHUN}/g, tahun).replace(/{BULAN}/g, bulan);
+      document.getElementById('previewNomor').textContent = hasil;
+    }
+    ['nomorPola', 'nomorKodeSekolah', 'nomorUrutNext', 'kodeUndangan', 'kodeTugas', 'kodeIzin', 'kodePkl'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updatePreviewNomor);
+    });
+    function generateNomorOtomatis() {
+      const pola = document.getElementById('nomorPola').value;
+      const kodeSekolah = document.getElementById('nomorKodeSekolah').value;
+      const urut = parseInt(document.getElementById('nomorUrutNext').value) || 1;
+      const tahun = new Date().getFullYear();
+      const bulan = String(new Date().getMonth() + 1).padStart(2, '0');
+      const jenis = document.getElementById('jenisSurat').value;
+      const kodeMap = { undangan: document.getElementById('kodeUndangan').value, pemberitahuan: document.getElementById('kodeUndangan').value, keterangan: document.getElementById('kodeUndangan').value, tugas: document.getElementById('kodeTugas').value, izin: document.getElementById('kodeIzin').value, pkl: document.getElementById('kodePkl').value };
+      const kode = kodeMap[jenis] || '421.3';
+      let hasil = pola.replace(/{KODE}/g, kode).replace(/{URUT}/g, String(urut).padStart(3, '0')).replace(/{SEKOLAH}/g, kodeSekolah).replace(/{TAHUN}/g, tahun).replace(/{BULAN}/g, bulan);
+      document.getElementById('nomorSurat').value = hasil;
+      document.getElementById('nomorUrutNext').value = urut + 1;
+      updatePreviewNomor();
+      saveNomorSettings();
+      renderPreview();
+      tampilkanToast(`Nomor otomatis: ${hasil}`);
+    }
+    function saveNomorSettings() {
+      const settings = { pola: document.getElementById('nomorPola').value, kodeSekolah: document.getElementById('nomorKodeSekolah').value, urutNext: parseInt(document.getElementById('nomorUrutNext').value) || 1, kodeUndangan: document.getElementById('kodeUndangan').value, kodeTugas: document.getElementById('kodeTugas').value, kodeIzin: document.getElementById('kodeIzin').value, kodePkl: document.getElementById('kodePkl').value, resetTahunan: document.getElementById('nomorResetTahunan').checked };
+      localStorage.setItem('appNomorSettings', JSON.stringify(settings));
+    }
+
+    // ===== KERTAS =====
+    function applyPaperSettings() {
+      const settings = JSON.parse(localStorage.getItem('appPaperSettings') || '{}');
+      const a4 = document.querySelector('.a4-paper');
+      if (!a4) return;
+      const modeHemat = document.getElementById('modeHematKertas')?.checked;
+      let top = settings.marginAtas || 20, bottom = settings.marginBawah || 20, left = settings.marginKiri || 20, right = settings.marginKanan || 20;
+      if (modeHemat) { top = bottom = left = right = 15; }
+      a4.style.padding = `${top}mm ${right}mm ${bottom}mm ${left}mm`;
+      a4.style.fontFamily = settings.fontFamily || 'Times New Roman, Times, serif';
+      a4.style.fontSize = (settings.fontSize || 12) + 'pt';
+    }
+    function loadPaperSettings() {
+      const s = JSON.parse(localStorage.getItem('appPaperSettings') || '{}');
+      document.getElementById('marginAtas').value = s.marginAtas || 20;
+      document.getElementById('marginBawah').value = s.marginBawah || 20;
+      document.getElementById('marginKiri').value = s.marginKiri || 20;
+      document.getElementById('marginKanan').value = s.marginKanan || 20;
+      document.getElementById('fontSizeDefault').value = s.fontSize || 12;
+      document.getElementById('fontFamilyDefault').value = s.fontFamily || 'Times New Roman, Times, serif';
+      document.getElementById('modeHematKertas').checked = s.modeHemat || false;
+      applyPaperSettings();
+    }
+
+    // ===== LOAD ALL =====
+    function loadAllSettings() {
+      const savedColor = localStorage.getItem('appThemeColor');
+      if (savedColor) {
+        applyThemeColor(savedColor);
+        document.getElementById('inputTemaColor').value = savedColor;
+        document.getElementById('colorHexValue').textContent = savedColor;
+      }
+      const savedLogo = localStorage.getItem('appLogo');
+      if (savedLogo) applyAppLogo(savedLogo);
+      loadWatermarkSettings();
+      loadPaperSettings();
+
+      const defaultData = JSON.parse(localStorage.getItem('appDefaultData') || '{}');
+      const autoApply = localStorage.getItem('appAutoApply') === 'true';
+      document.getElementById('defInstansiTinggi').value = defaultData.instansiTinggi || '';
+      document.getElementById('defInstansiDinas').value = defaultData.instansiDinas || '';
+      document.getElementById('defNamaSekolah').value = defaultData.namaSekolah || '';
+      document.getElementById('defAlamat').value = defaultData.alamatSekolah || '';
+      document.getElementById('defKontak').value = defaultData.kontakSekolah || '';
+      document.getElementById('defKepsek').value = defaultData.kepsek || '';
+      document.getElementById('defNipKepsek').value = defaultData.nipKepsek || '';
+      document.getElementById('defKota').value = defaultData.kotaSurat || '';
+      document.getElementById('defAutoApply').checked = autoApply;
+      if (autoApply && Object.keys(defaultData).length > 0) {
+        Object.keys(defaultData).forEach(key => {
+          const el = document.getElementById(key);
+          if (el && defaultData[key]) el.value = defaultData[key];
+        });
+      }
+
+      const nomorSettings = JSON.parse(localStorage.getItem('appNomorSettings') || '{}');
+      document.getElementById('nomorPola').value = nomorSettings.pola || '{KODE}/{URUT}/{SEKOLAH}/{TAHUN}';
+      document.getElementById('nomorKodeSekolah').value = nomorSettings.kodeSekolah || 'SMAN1';
+      document.getElementById('nomorUrutNext').value = nomorSettings.urutNext || 89;
+      document.getElementById('kodeUndangan').value = nomorSettings.kodeUndangan || '421.3';
+      document.getElementById('kodeTugas').value = nomorSettings.kodeTugas || '090';
+      document.getElementById('kodeIzin').value = nomorSettings.kodeIzin || '005';
+      document.getElementById('kodePkl').value = nomorSettings.kodePkl || '421.5';
+      document.getElementById('nomorResetTahunan').checked = nomorSettings.resetTahunan !== false;
+      updatePreviewNomor();
+      updateWmTipe();
+
+      if (localStorage.getItem('focusMode') === 'on') {
+        document.body.classList.add('focus-mode');
+        document.getElementById('btnFocusMode').innerHTML = '<i class="fa-solid fa-compress text-emerald-400"></i> Keluar Fokus';
+      }
+    }
+
+    // ===== SETTINGS OPEN/SAVE =====
+    function bukaModalSettings() {
+      const savedLogo = localStorage.getItem('appLogo');
+      const savedColor = localStorage.getItem('appThemeColor') || '#2563eb';
+      const previewLogo = document.getElementById('previewLogoHeader');
+      if (savedLogo) previewLogo.innerHTML = `<img src="${savedLogo}" class="w-full h-full object-contain rounded-lg">`;
+      else previewLogo.innerHTML = `<i class="fa-solid fa-file-signature text-xl"></i>`;
+      document.getElementById('inputTemaColor').value = savedColor;
+      document.getElementById('colorHexValue').textContent = savedColor;
+      switchTab('tabTampilan');
+      updateBackupInfo();
+      document.getElementById('settingsModal').classList.add('active');
+    }
+    document.getElementById('btnOpenSettings').addEventListener('click', bukaModalSettings);
+    document.getElementById('inputTemaColor').addEventListener('input', function(e) {
+      document.getElementById('colorHexValue').textContent = e.target.value;
+    });
+    document.getElementById('inputLogoWebsite').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('previewLogoHeader').innerHTML = `<img src="${event.target.result}" class="w-full h-full object-contain rounded-lg">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    document.getElementById('btnSaveSettings').addEventListener('click', function() {
+      const logoFile = document.getElementById('inputLogoWebsite').files[0];
+      const themeColor = document.getElementById('inputTemaColor').value;
+      localStorage.setItem('appThemeColor', themeColor);
+      applyThemeColor(themeColor);
+      saveAllOtherSettings();
+      if (logoFile) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64 = event.target.result;
+          localStorage.setItem('appLogo', base64);
+          applyAppLogo(base64);
+          tampilkanToast('Semua pengaturan disimpan!');
+          tutupModal('settingsModal');
+        };
+        reader.readAsDataURL(logoFile);
+      } else {
+        tampilkanToast('Semua pengaturan disimpan!');
+        tutupModal('settingsModal');
+      }
+    });
+    function saveAllOtherSettings() {
+      const defaultData = {
+        instansiTinggi: document.getElementById('defInstansiTinggi').value,
+        instansiDinas: document.getElementById('defInstansiDinas').value,
+        namaSekolah: document.getElementById('defNamaSekolah').value,
+        alamatSekolah: document.getElementById('defAlamat').value,
+        kontakSekolah: document.getElementById('defKontak').value,
+        kepsek: document.getElementById('defKepsek').value,
+        nipKepsek: document.getElementById('defNipKepsek').value,
+        kotaSurat: document.getElementById('defKota').value
+      };
+      localStorage.setItem('appDefaultData', JSON.stringify(defaultData));
+      localStorage.setItem('appAutoApply', document.getElementById('defAutoApply').checked);
+      saveNomorSettings();
+      const wmTipe = document.querySelector('input[name="wmTipe"]:checked').value;
+      const wmData = { aktif: document.getElementById('wmAktif').checked, tipe: wmTipe, teks: document.getElementById('wmTeks').value, opacity: parseInt(document.getElementById('wmOpacity').value), rotasi: parseInt(document.getElementById('wmRotasi').value), posisi: document.getElementById('wmPosisi').value, gambar: document.getElementById('wmPreviewImg').src || '' };
+      localStorage.setItem('appWatermark', JSON.stringify(wmData));
+      renderWatermark();
+      const paperData = { marginAtas: parseInt(document.getElementById('marginAtas').value) || 20, marginBawah: parseInt(document.getElementById('marginBawah').value) || 20, marginKiri: parseInt(document.getElementById('marginKiri').value) || 20, marginKanan: parseInt(document.getElementById('marginKanan').value) || 20, fontSize: parseInt(document.getElementById('fontSizeDefault').value) || 12, fontFamily: document.getElementById('fontFamilyDefault').value, modeHemat: document.getElementById('modeHematKertas').checked };
+      localStorage.setItem('appPaperSettings', JSON.stringify(paperData));
+      applyPaperSettings();
+    }
+    function applyThemeColor(color) {
+      let styleEl = document.getElementById('dynamic-theme-style');
+      if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'dynamic-theme-style'; document.head.appendChild(styleEl); }
+      styleEl.innerHTML = `
+        .bg-blue-600 { background-color: ${color} !important; }
+        .bg-blue-500 { background-color: ${color} !important; }
+        .hover\\:bg-blue-700:hover { background-color: ${color} !important; filter: brightness(0.9); }
+        .hover\\:bg-blue-600:hover { background-color: ${color} !important; filter: brightness(1.1); }
+        .text-blue-600 { color: ${color} !important; }
+        .text-blue-700 { color: ${color} !important; }
+        .text-blue-500 { color: ${color} !important; }
+        .border-blue-600 { border-color: ${color} !important; }
+        .border-blue-500 { border-color: ${color} !important; }
+        .border-blue-300 { border-color: ${color} !important; }
+        .focus\\:ring-blue-500:focus { --tw-ring-color: ${color} !important; }
+        header { background: linear-gradient(270deg, #0f172a, #1e293b, #0f172a, ${color}, #0f172a) !important; background-size: 400% 400% !important; animation: headerGradientMove 18s ease infinite, fadeIn 0.4s ease-out !important; }
+        #btnDownloadPdf { background-color: ${color} !important; }
+        #btnDownloadPdf:hover { filter: brightness(0.9); }
+        .text-cyan-400 { color: ${color} !important; }
+        .text-purple-400 { color: ${color} !important; }
+        .text-amber-400 { color: ${color} !important; }
+      `;
+    }
+    function applyAppLogo(base64Image) {
+      const c = document.getElementById('headerLogoContainer');
+      if (c) {
+        c.style.width = '44px'; c.style.height = '44px';
+        c.style.minWidth = '44px'; c.style.minHeight = '44px';
+        c.style.maxWidth = '44px'; c.style.maxHeight = '44px';
+        c.style.overflow = 'hidden'; c.style.padding = '0';
+        c.style.display = 'flex'; c.style.alignItems = 'center'; c.style.justifyContent = 'center';
+        c.style.borderRadius = '0.5rem'; c.style.flexShrink = '0';
+        c.classList.remove('bg-blue-600', 'p-2.5');
+        c.classList.add('bg-transparent');
+        c.innerHTML = `<img src="${base64Image}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 0.5rem;">`;
+      }
+    }
+
+    // ===== CORE =====
+    function formatTanggalIndo(strDate) {
+      if (!strDate) return '';
+      const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      const parts = strDate.split('-');
+      if (parts.length === 3) return `${parseInt(parts[2], 10)} ${bulan[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
+      return strDate;
+    }
+    function ambilSemuaSurat() { try { return JSON.parse(localStorage.getItem('suratTersimpan') || '[]'); } catch (e) { return []; } }
+    function simpanSemuaSurat(arr) { localStorage.setItem('suratTersimpan', JSON.stringify(arr)); }
+
+    function ambilDataForm() {
+      return { instansiTinggi: document.getElementById('instansiTinggi').value, instansiDinas: document.getElementById('instansiDinas').value, namaSekolah: document.getElementById('namaSekolah').value, alamatSekolah: document.getElementById('alamatSekolah').value, kontakSekolah: document.getElementById('kontakSekolah').value, logoUrl: logoBase64 || '', jenisSurat: document.getElementById('jenisSurat').value, nomorSurat: document.getElementById('nomorSurat').value, tanggalSurat: document.getElementById('tanggalSurat').value, lampiran: document.getElementById('lampiran').value, perihal: document.getElementById('perihal').value, kepada: document.getElementById('kepada').value, namaSiswa: document.getElementById('namaSiswa').value, nis: document.getElementById('nis').value, kelas: document.getElementById('kelas').value, hariTanggal: document.getElementById('hariTanggal').value, waktu: document.getElementById('waktu').value, tempat: document.getElementById('tempat').value, isiSurat: document.getElementById('isiSurat').value, penutup: document.getElementById('penutup').value, kotaSurat: document.getElementById('kotaSurat').value, jabatanKepsek: document.getElementById('jabatanKepsek').value, kepsek: document.getElementById('kepsek').value, nipKepsek: document.getElementById('nipKepsek').value, ttdUrl: ttdBase64 || '' };
+    }
+    function isiDataForm(data) {
+      document.getElementById('instansiTinggi').value = data.instansiTinggi || '';
+      document.getElementById('instansiDinas').value = data.instansiDinas || '';
+      document.getElementById('namaSekolah').value = data.namaSekolah || '';
+      document.getElementById('alamatSekolah').value = data.alamatSekolah || '';
+      document.getElementById('kontakSekolah').value = data.kontakSekolah || '';
+      document.getElementById('jenisSurat').value = data.jenisSurat || 'undangan';
+      document.getElementById('nomorSurat').value = data.nomorSurat || '';
+      document.getElementById('tanggalSurat').value = data.tanggalSurat || '';
+      document.getElementById('lampiran').value = data.lampiran || '';
+      document.getElementById('perihal').value = data.perihal || '';
+      document.getElementById('kepada').value = data.kepada || '';
+      document.getElementById('namaSiswa').value = data.namaSiswa || '';
+      document.getElementById('nis').value = data.nis || '';
+      document.getElementById('kelas').value = data.kelas || '';
+      document.getElementById('hariTanggal').value = data.hariTanggal || '';
+      document.getElementById('waktu').value = data.waktu || '';
+      document.getElementById('tempat').value = data.tempat || '';
+      document.getElementById('isiSurat').value = data.isiSurat || '';
+      document.getElementById('penutup').value = data.penutup || '';
+      document.getElementById('kotaSurat').value = data.kotaSurat || '';
+      document.getElementById('jabatanKepsek').value = data.jabatanKepsek || '';
+      document.getElementById('kepsek').value = data.kepsek || '';
+      document.getElementById('nipKepsek').value = data.nipKepsek || '';
+      if (data.logoUrl) { logoBase64 = data.logoUrl; document.getElementById('imgLogo').src = data.logoUrl; } else { logoBase64 = null; }
+      if (data.ttdUrl) { ttdBase64 = data.ttdUrl; } else { ttdBase64 = null; }
+      updateTemplateByJenis();
+      renderPreview();
+    }
+    function simpanSurat() {
+      const data = ambilDataForm();
+      const arr = ambilSemuaSurat();
+      const editId = localStorage.getItem('editSuratId');
+      if (editId) {
+        const idx = arr.findIndex(s => s.id === editId);
+        if (idx !== -1) arr[idx] = { ...arr[idx], ...data, updatedAt: new Date().toISOString() };
+        localStorage.removeItem('editSuratId');
+        tampilkanToast('Surat berhasil diperbarui!');
+      } else {
+        arr.unshift({ id: 'surat_' + Date.now(), ...data, createdAt: new Date().toISOString() });
+        tampilkanToast('Surat berhasil disimpan!');
+      }
+      simpanSemuaSurat(arr);
+      renderRiwayat();
+      updateBackupInfo();
+    }
+
+    const templateSurat = [
+      { id: 'undangan_rapat', nama: 'Undangan Rapat Orang Tua', deskripsi: 'Undangan resmi untuk rapat orang tua/wali murid', jenis: 'undangan', ikon: 'fa-envelope-open-text', warna: 'blue', data: { jenisSurat: 'undangan', perihal: 'Undangan Rapat Orang Tua / Wali Murid', kepada: 'Bapak/Ibu Orang Tua / Wali Murid\nSiswa Kelas XII\ndi Tempat', isiSurat: 'Sehubungan dengan persiapan pelaksanaan Ujian Akhir Semester (UAS) dan sosialisasi program kelulusan, kami mengharapkan kehadiran Bapak/Ibu Orang Tua/Wali Murid pada acara rapat koordinasi yang akan dilaksanakan pada:', penutup: 'Mengingat pentingnya acara tersebut, kami memohon kehadiran Bapak/Ibu tepat pada waktunya. Atas perhatian dan kerja sama yang baik, kami ucapkan terima kasih.', lampiran: '1 (Satu) Berkas', hariTanggal: 'Sabtu, 17 Oktober 2026', waktu: '08.30 - 11.30 WIB', tempat: 'Aula Utama SMA Negeri 1 Nusantara' } },
+      { id: 'keterangan_siswa', nama: 'Surat Keterangan Siswa Aktif', deskripsi: 'Menerangkan bahwa siswa terdaftar dan aktif', jenis: 'keterangan', ikon: 'fa-id-card', warna: 'emerald', data: { jenisSurat: 'keterangan', perihal: 'Surat Keterangan Siswa Aktif', kepada: 'Menerangkan Bahwa :', isiSurat: 'Bahwa nama yang tercantum di bawah ini adalah benar-benar siswa aktif terdaftar yang sedang menempuh pendidikan di SMA Negeri 1 Nusantara pada Tahun Ajaran berjalan:', penutup: 'Demikian Surat Keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.', namaSiswa: 'Ahmad Fauzi', nis: '10293847', kelas: 'XII MIPA 1' } },
+      { id: 'tugas_guru', nama: 'Surat Tugas Guru / Staf', deskripsi: 'Penugasan resmi untuk guru atau staf', jenis: 'tugas', ikon: 'fa-briefcase', warna: 'amber', data: { jenisSurat: 'tugas', perihal: 'Surat Tugas', kepada: 'Memberikan Tugas Kepada :', isiSurat: 'Dalam rangka meningkatkan mutu pendidik dan tenaga kependidikan, Kepala Sekolah dengan ini memberikan tugas penuh kepada :', penutup: 'Demikian surat tugas ini diberikan agar dilaksanakan dengan penuh rasa tanggung jawab.', namaSiswa: 'Siti Nurhaliza, S.Pd.', nis: 'NIP. 19820311 200801 2 006', kelas: 'Guru Pembina OSIS', hariTanggal: 'Rabu - Jumat, 14-16 Oktober 2026', waktu: '08.00 WIB s/d Selesai', tempat: 'Hotel Grand Pacific, Jakarta' } },
+      { id: 'izin_tempat', nama: 'Permohonan Izin Tempat', deskripsi: 'Izin penggunaan tempat/kegiatan', jenis: 'izin', ikon: 'fa-handshake', warna: 'purple', data: { jenisSurat: 'izin', perihal: 'Permohonan Izin Tempat & Kegiatan', kepada: 'Kepala Pengelola Gedung Serbaguna\ndi Tempat', isiSurat: 'Dengan hormat, sehubungan dengan agenda tahunan Peringatan Hari Pendidikan Nasional, kami mengajukan permohonan izin penggunaan lokasi dan tempat kegiatan yang akan diselenggarakan pada:', penutup: 'Demikian surat permohonan izin ini kami sampaikan. Atas perhatian, dukungan, dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.', hariTanggal: 'Senin, 2 Mei 2026', waktu: '07.00 - 12.00 WIB', tempat: 'Gedung Serbaguna Kecamatan' } },
+      { id: 'pemberitahuan_libur', nama: 'Pemberitahuan Libur Sekolah', deskripsi: 'Memberitahukan jadwal libur sekolah', jenis: 'pemberitahuan', ikon: 'fa-bullhorn', warna: 'rose', data: { jenisSurat: 'pemberitahuan', perihal: 'Pemberitahuan Libur Semester', kepada: 'Bapak/Ibu Orang Tua / Wali Murid\ndi Tempat', isiSurat: 'Dengan hormat, sehubungan dengan berakhirnya kegiatan belajar mengajar Semester Ganjil Tahun Ajaran 2025/2026, kami memberitahukan bahwa kegiatan belajar akan diliburkan pada:', penutup: 'Demikian pemberitahuan ini kami sampaikan. Mohon perhatian dan kerja samanya. Terima kasih.', hariTanggal: 'Senin - Sabtu, 21 Desember 2026 - 3 Januari 2027', waktu: 'Libur penuh', tempat: '-' } },
+      { id: 'pengantar_pkl', nama: 'Surat Pengantar PKL / Magang', deskripsi: 'Pengantar siswa untuk PKL / Magang', jenis: 'pkl', ikon: 'fa-building-user', warna: 'cyan', data: { jenisSurat: 'pkl', perihal: 'Surat Pengantar Praktik Kerja Lapangan (PKL)', kepada: 'Pimpinan / HRD Perusahaan / Instansi\ndi Tempat', isiSurat: 'Dengan hormat, sehubungan dengan pelaksanaan program Praktik Kerja Lapangan (PKL) sebagai bagian dari kurikulum sekolah, kami mengajukan permohonan agar siswa kami dapat melaksanakan PKL/Magang di perusahaan/instansi yang Bapak/Ibu pimpin, dengan data siswa sebagai berikut:', penutup: 'Demikian surat pengantar ini kami sampaikan. Besar harapan kami agar Bapak/Ibu dapat menerima siswa kami untuk melaksanakan PKL. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.', namaSiswa: 'Muhammad Rizky Pratama', nis: '10293847', kelas: 'XII TKJ 1', hariTanggal: 'Senin, 5 Januari 2026 s.d. Sabtu, 28 Maret 2026', waktu: '08.00 - 16.00 WIB', tempat: 'PT Teknologi Nusantara, Jakarta Selatan' } }
+    ];
+
+    function bukaModalTemplate() {
+      const container = document.getElementById('templateList');
+      const warnaMap = { blue: 'bg-blue-50 border-blue-200 text-blue-700', emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700', amber: 'bg-amber-50 border-amber-200 text-amber-700', purple: 'bg-purple-50 border-purple-200 text-purple-700', rose: 'bg-rose-50 border-rose-200 text-rose-700', cyan: 'bg-cyan-50 border-cyan-200 text-cyan-700' };
+      container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${templateSurat.map(t => `<div onclick="gunakanTemplate('${t.id}')" class="letter-card flex items-start gap-4 group"><div class="w-12 h-12 rounded-lg ${warnaMap[t.warna] || 'bg-slate-100'} flex items-center justify-center flex-shrink-0"><i class="fa-solid ${t.ikon} text-lg"></i></div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition">${t.nama}</h4><p class="text-xs text-slate-500 mt-1">${t.deskripsi}</p><span class="inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">${t.jenis}</span></div><i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-blue-500 transition mt-1"></i></div>`).join('')}</div>`;
+      document.getElementById('modalTemplate').classList.add('active');
+    }
+    function gunakanTemplate(id) {
+      const t = templateSurat.find(x => x.id === id);
+      if (!t) return;
+      Object.keys(t.data).forEach(key => { const el = document.getElementById(key); if (el) el.value = t.data[key]; });
+      generateNomorOtomatis();
+      document.getElementById('tanggalSurat').value = new Date().toISOString().split('T')[0];
+      updateTemplateByJenis();
+      tutupModal('modalTemplate');
+      tampilkanToast(`Template "${t.nama}" dimuat!`);
+    }
+    function bukaModalRiwayat() { renderRiwayat(); document.getElementById('modalRiwayat').classList.add('active'); }
+    function renderRiwayat() {
+      const arr = ambilSemuaSurat();
+      const keyword = (document.getElementById('searchRiwayat')?.value || '').toLowerCase();
+      const container = document.getElementById('riwayatList');
+      if (!container) return;
+      const filtered = arr.filter(s => {
+        if (!keyword) return true;
+        return (s.nomorSurat || '').toLowerCase().includes(keyword) || (s.namaSiswa || '').toLowerCase().includes(keyword) || (s.perihal || '').toLowerCase().includes(keyword) || (s.jenisSurat || '').toLowerCase().includes(keyword) || (s.kepsek || '').toLowerCase().includes(keyword);
+      });
+      if (filtered.length === 0) { container.innerHTML = `<div class="text-center py-12"><div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-inbox text-slate-300 text-2xl"></i></div><p class="text-slate-400 text-sm">${keyword ? 'Tidak ada surat yang cocok.' : 'Belum ada surat tersimpan.'}</p></div>`; return; }
+      const jenisLabel = { undangan: { text: 'Undangan', color: 'bg-blue-100 text-blue-700' }, pemberitahuan: { text: 'Pemberitahuan', color: 'bg-amber-100 text-amber-700' }, keterangan: { text: 'Keterangan', color: 'bg-emerald-100 text-emerald-700' }, tugas: { text: 'Tugas', color: 'bg-purple-100 text-purple-700' }, izin: { text: 'Izin', color: 'bg-rose-100 text-rose-700' }, pkl: { text: 'PKL', color: 'bg-cyan-100 text-cyan-700' } };
+      container.innerHTML = filtered.map(s => {
+        const jl = jenisLabel[s.jenisSurat] || { text: s.jenisSurat, color: 'bg-slate-100 text-slate-600' };
+        const tgl = s.createdAt ? new Date(s.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+        return `<div class="letter-card flex items-center gap-4"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${jl.color}">${jl.text}</span><span class="text-[10px] text-slate-400">${tgl}</span></div><h4 class="font-bold text-slate-800 text-sm mt-1 truncate">${s.perihal || s.nomorSurat || 'Tanpa Perihal'}</h4><p class="text-xs text-slate-500 truncate mt-0.5">No: ${s.nomorSurat || '-'} | ${s.namaSiswa || s.kepsek || '-'}</p></div><div class="flex items-center gap-1.5 flex-shrink-0"><button onclick="event.stopPropagation(); bukaSurat('${s.id}')" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition"><i class="fa-solid fa-folder-open text-xs"></i></button><button onclick="event.stopPropagation(); duplikasiSuratById('${s.id}')" class="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition"><i class="fa-solid fa-copy text-xs"></i></button><button onclick="event.stopPropagation(); hapusSurat('${s.id}')" class="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition"><i class="fa-solid fa-trash text-xs"></i></button></div></div>`;
+      }).join('');
+    }
+    function bukaSurat(id) {
+      const arr = ambilSemuaSurat();
+      const s = arr.find(x => x.id === id);
+      if (!s) return;
+      localStorage.setItem('editSuratId', id);
+      isiDataForm(s);
+      tutupModal('modalRiwayat');
+      tampilkanToast('Surat berhasil dibuka!');
+    }
+    function hapusSurat(id) {
+      tampilkanKonfirmasi('Hapus Surat', 'Yakin ingin menghapus surat ini?', () => {
+        const arr = ambilSemuaSurat().filter(s => s.id !== id);
+        simpanSemuaSurat(arr);
+        renderRiwayat();
+        updateBackupInfo();
+        tampilkanToast('Surat berhasil dihapus.');
+      });
+    }
+    function bukaModalKop() { document.getElementById('modalKop').classList.add('active'); }
+    function terapkanKop() {
+      const warna = document.getElementById('warnaKop').value;
+      const ukuran = document.getElementById('ukuranLogo').value;
+      const gaya = document.getElementById('gayaGarisKop').value;
+      const fontSekolah = document.getElementById('ukuranFontSekolah').value;
+      const kop = document.querySelector('.kop-header');
+      const logo = document.querySelector('.logo-box');
+      const namaSekolah = document.querySelector('.nama-sekolah');
+      if (kop) { if (gaya.includes('#')) kop.style.borderBottom = gaya.replace(/#[0-9a-fA-F]{6}/, warna); else kop.style.borderBottom = `${gaya} ${warna}`; }
+      if (logo) { logo.style.width = ukuran + 'px'; logo.style.height = ukuran + 'px'; }
+      if (namaSekolah) namaSekolah.style.fontSize = fontSekolah + 'pt';
+      localStorage.setItem('kopWarna', warna);
+      localStorage.setItem('kopUkuranLogo', ukuran);
+      localStorage.setItem('kopGayaGaris', gaya);
+      localStorage.setItem('kopFontSekolah', fontSekolah);
+    }
+    (function muatPreferensiKop() {
+      const warna = localStorage.getItem('kopWarna');
+      const ukuran = localStorage.getItem('kopUkuranLogo');
+      const gaya = localStorage.getItem('kopGayaGaris');
+      const fontSekolah = localStorage.getItem('kopFontSekolah');
+      if (warna) document.getElementById('warnaKop').value = warna;
+      if (ukuran) document.getElementById('ukuranLogo').value = ukuran;
+      if (gaya) document.getElementById('gayaGarisKop').value = gaya;
+      if (fontSekolah) document.getElementById('ukuranFontSekolah').value = fontSekolah;
+      setTimeout(terapkanKop, 100);
+    })();
+
+    function initSignaturePad() {
+      const canvas = document.getElementById('signaturePad');
+      if (!canvas) return;
+      signaturePad = new SignaturePad(canvas);
+    }
+    function SignaturePad(canvas) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.drawing = false;
+      this.isEmpty = true;
+      const self = this;
+      function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+        else { clientX = e.clientX; clientY = e.clientY; }
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+      }
+      function startDraw(e) { e.preventDefault(); self.drawing = true; self.isEmpty = false; const pos = getPos(e); self.ctx.beginPath(); self.ctx.moveTo(pos.x, pos.y); }
+      function draw(e) { e.preventDefault(); if (!self.drawing) return; const pos = getPos(e); self.ctx.lineWidth = 2.5; self.ctx.lineCap = 'round'; self.ctx.strokeStyle = document.body.classList.contains('dark-mode') ? '#f8fafc' : '#1e293b'; self.ctx.lineTo(pos.x, pos.y); self.ctx.stroke(); }
+      function stopDraw(e) { e.preventDefault(); self.drawing = false; }
+      canvas.addEventListener('mousedown', startDraw);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDraw);
+      canvas.addEventListener('mouseleave', stopDraw);
+      canvas.addEventListener('touchstart', startDraw, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      canvas.addEventListener('touchend', stopDraw, { passive: false });
+    }
+    SignaturePad.prototype.clear = function() { this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.isEmpty = true; };
+    SignaturePad.prototype.toDataURL = function() { return this.canvas.toDataURL('image/png'); };
+    function bukaModalTTD() {
+      const canvas = document.getElementById('signaturePad');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = 200 * 2;
+      if (signaturePad) signaturePad.clear();
+      document.getElementById('modalTTD').classList.add('active');
+    }
+    function clearSignature() { if (signaturePad) signaturePad.clear(); }
+    function simpanSignature() {
+      if (!signaturePad || signaturePad.isEmpty) { tampilkanToast('Tanda tangan masih kosong', 'warning'); return; }
+      const dataUrl = signaturePad.toDataURL();
+      const list = JSON.parse(localStorage.getItem('appStamps') || '[]');
+      list.push({ nama: 'TTD Manual ' + new Date().toLocaleTimeString(), tipe: 'ttd', gambar: dataUrl });
+      localStorage.setItem('appStamps', JSON.stringify(list));
+      ttdBase64 = dataUrl;
+      tutupModal('modalTTD');
+      loadStampCollection();
+      updateBackupInfo();
+      renderPreview();
+      tampilkanToast('Tanda tangan disimpan ke koleksi!');
+    }
+
+    function simpanPDF() {
+      const btn = document.getElementById('btnDownloadPdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+      btn.disabled = true;
+      const element = document.getElementById('preview');
+      const jenis = document.getElementById('jenisSurat').value;
+      const nomor = document.getElementById('nomorSurat').value.replace(/[\/\\:*?"<>|]/g, '-');
+      const namaFile = `Surat_${jenis}_${nomor || new Date().toISOString().slice(0, 10)}.pdf`;
+      const previewContainer = document.querySelector('.preview-container');
+      const originalScrollTop = previewContainer ? previewContainer.scrollTop : 0;
+      if (previewContainer) previewContainer.scrollTop = 0;
+      const origStyle = { transform: element.style.transform, margin: element.style.margin, boxShadow: element.style.boxShadow, animation: element.style.animation, transition: element.style.transition };
+      element.style.transform = 'none'; element.style.margin = '0'; element.style.boxShadow = 'none'; element.style.animation = 'none'; element.style.transition = 'none';
+      void element.offsetHeight;
+      const opt = {
+        margin: 0, filename: namaFile, image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { scale: 5, useCORS: true, logging: false, letterRendering: true, allowTaint: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, windowWidth: element.scrollWidth, windowHeight: element.scrollHeight, x: 0, y: 0, dpi: 300, removeContainer: true,
+          onclone: function(clonedDoc) {
+            const s = clonedDoc.createElement('style');
+            s.innerHTML = `*, *::before, *::after { animation: none !important; transition: none !important; filter: none !important; backdrop-filter: none !important; opacity: 1 !important; } #preview { margin: 0 !important; width: 210mm !important; min-height: 297mm !important; box-sizing: border-box !important; background: #ffffff !important; }`;
+            clonedDoc.head.appendChild(s);
+          }
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: false },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      html2pdf().set(opt).from(element).save().then(() => {
+        Object.assign(element.style, origStyle);
+        if (previewContainer) previewContainer.scrollTop = originalScrollTop;
+        btn.innerHTML = originalText; btn.disabled = false;
+        tampilkanToast('PDF berhasil diunduh!');
+      }).catch(err => {
+        console.error(err);
+        Object.assign(element.style, origStyle);
+        if (previewContainer) previewContainer.scrollTop = originalScrollTop;
+        btn.innerHTML = originalText; btn.disabled = false;
+        tampilkanToast('Kendala PDF. Gunakan tombol Cetak.', 'error');
+      });
+    }
+    function duplikasiSurat() {
+      const data = ambilDataForm();
+      const arr = ambilSemuaSurat();
+      arr.unshift({ id: 'surat_' + Date.now(), ...data, nomorSurat: data.nomorSurat ? data.nomorSurat + ' (Copy)' : '', createdAt: new Date().toISOString() });
+      simpanSemuaSurat(arr);
+      renderRiwayat();
+      updateBackupInfo();
+      tampilkanToast('Surat berhasil diduplikasi!');
+    }
+    function duplikasiSuratById(id) {
+      const arr = ambilSemuaSurat();
+      const s = arr.find(x => x.id === id);
+      if (!s) return;
+      arr.unshift({ ...s, id: 'surat_' + Date.now(), nomorSurat: s.nomorSurat ? s.nomorSurat + ' (Copy)' : '', createdAt: new Date().toISOString() });
+      simpanSemuaSurat(arr);
+      renderRiwayat();
+      updateBackupInfo();
+      tampilkanToast('Surat berhasil diduplikasi!');
+    }
+    function exportData() {
+      const arr = ambilSemuaSurat();
+      if (arr.length === 0) { tampilkanToast('Belum ada data untuk diexport', 'warning'); return; }
+      const blob = new Blob([JSON.stringify(arr, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_surat_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      tampilkanToast(`${arr.length} surat berhasil diexport!`);
+    }
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!Array.isArray(imported)) throw new Error('Format tidak valid');
+          const existing = ambilSemuaSurat();
+          const existingIds = new Set(existing.map(s => s.id));
+          let added = 0;
+          imported.forEach(s => { if (!existingIds.has(s.id)) { existing.push(s); added++; } });
+          simpanSemuaSurat(existing);
+          renderRiwayat();
+          updateBackupInfo();
+          tampilkanToast(`${added} surat berhasil diimport!`);
+        } catch (err) { tampilkanToast('File tidak valid', 'error'); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+    function tampilkanToast(pesan, tipe = 'success') {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toastMessage');
+      const icon = toast.querySelector('i');
+      msg.textContent = pesan;
+      if (tipe === 'success') { icon.className = 'fa-solid fa-circle-check text-emerald-400'; toast.querySelector('.bg-slate-800').style.background = '#1e293b'; }
+      else if (tipe === 'warning') { icon.className = 'fa-solid fa-triangle-exclamation text-amber-400'; toast.querySelector('.bg-slate-800').style.background = '#78350f'; }
+      else if (tipe === 'error') { icon.className = 'fa-solid fa-circle-xmark text-red-400'; toast.querySelector('.bg-slate-800').style.background = '#7f1d1d'; }
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); toast.classList.remove('translate-y-0', 'opacity-100'); }, 3000);
+    }
+    function tutupModal(id) { document.getElementById(id).classList.remove('active'); }
+    function tampilkanKonfirmasi(judul, pesan, callback) {
+      document.getElementById('konfirmasiJudul').textContent = judul;
+      document.getElementById('konfirmasiPesan').textContent = pesan;
+      konfirmasiCallback = callback;
+      document.getElementById('konfirmasiYaBtn').onclick = function() { tutupModal('modalKonfirmasi'); if (konfirmasiCallback) konfirmasiCallback(); };
+      document.getElementById('modalKonfirmasi').classList.add('active');
+    }
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+    });
+    function loadLogo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) { logoBase64 = e.target.result; document.getElementById('imgLogo').src = logoBase64; document.getElementById('logoUrl').value = ''; renderPreview(); };
+        reader.readAsDataURL(file);
+      }
+    }
+    function loadLogoUrl() {
+      const url = document.getElementById('logoUrl').value.trim();
+      if (url) { logoBase64 = url; document.getElementById('imgLogo').src = url; }
+      else { logoBase64 = null; document.getElementById('imgLogo').src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f1f5f9' stroke='%2394a3b8' stroke-width='2'/><path d='M30 65 L50 30 L70 65 Z' fill='%232563eb'/><text x='50%' y='82%' font-size='10' font-weight='bold' text-anchor='middle' fill='%23475569'>SEKOLAH</text></svg>"; }
+      renderPreview();
+    }
+    function loadTTD(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) { ttdBase64 = e.target.result; renderPreview(); };
+        reader.readAsDataURL(file);
+      }
+    }
+    function updateTemplateByJenis() {
+      const jenis = document.getElementById('jenisSurat').value;
+      const rowLampiranPerihal = document.getElementById('rowLampiranPerihal');
+      const lblKepada = document.getElementById('lblKepada');
+      if (jenis === 'keterangan') {
+        rowLampiranPerihal.style.display = 'none';
+        lblKepada.innerText = 'Keterangan Tujuan / Penerima:';
+        document.getElementById('kepada').value = 'Menerangkan Bahwa :';
+        document.getElementById('isiSurat').value = 'Bahwa nama yang tercantum di bawah ini adalah benar-benar siswa aktif terdaftar yang sedang menempuh pendidikan di SMA Negeri 1 Nusantara pada Tahun Ajaran berjalan:';
+        document.getElementById('penutup').value = 'Demikian Surat Keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.';
+      } else if (jenis === 'tugas') {
+        rowLampiranPerihal.style.display = 'none';
+        lblKepada.innerText = 'Tugas Kepada:';
+        document.getElementById('kepada').value = 'Memberikan Tugas Kepada :';
+        document.getElementById('isiSurat').value = 'Dalam rangka meningkatkan mutu pendidik dan tenaga kependidikan, Kepala Sekolah dengan ini memberikan tugas penuh kepada :';
+        document.getElementById('penutup').value = 'Demikian surat tugas ini diberikan agar dilaksanakan dengan penuh rasa tanggung jawab.';
+      } else if (jenis === 'izin') {
+        rowLampiranPerihal.style.display = 'grid';
+        lblKepada.innerText = 'Kepada Yth.';
+        document.getElementById('perihal').value = 'Permohonan Izin Tempat & Kegiatan';
+        document.getElementById('kepada').value = 'Kepala Pengelola Gedung Serbaguna\ndi Tempat';
+      } else if (jenis === 'pkl') {
+        rowLampiranPerihal.style.display = 'grid';
+        lblKepada.innerText = 'Kepada Yth.';
+        document.getElementById('perihal').value = 'Surat Pengantar Praktik Kerja Lapangan (PKL)';
+        document.getElementById('kepada').value = 'Pimpinan / HRD Perusahaan / Instansi\ndi Tempat';
+      } else {
+        rowLampiranPerihal.style.display = 'grid';
+        lblKepada.innerText = 'Kepada Yth.';
+      }
+      updatePreviewNomor();
+      renderPreview();
+    }
+    function renderPreview() {
+      document.getElementById('pInstansiTinggi').innerText = document.getElementById('instansiTinggi').value;
+      document.getElementById('pInstansiDinas').innerText = document.getElementById('instansiDinas').value;
+      document.getElementById('pNamaSekolah').innerText = document.getElementById('namaSekolah').value;
+      document.getElementById('pAlamatSekolah').innerText = document.getElementById('alamatSekolah').value;
+      document.getElementById('pKontakSekolah').innerText = document.getElementById('kontakSekolah').value;
+      const jenis = document.getElementById('jenisSurat').value;
+      const nomor = document.getElementById('nomorSurat').value;
+      const tgl = formatTanggalIndo(document.getElementById('tanggalSurat').value);
+      const kota = document.getElementById('kotaSurat').value;
+      const lampiran = document.getElementById('lampiran').value;
+      const perihal = document.getElementById('perihal').value;
+      const kepada = document.getElementById('kepada').value.replace(/\n/g, '<br>');
+      const namaSiswa = document.getElementById('namaSiswa').value;
+      const nis = document.getElementById('nis').value;
+      const kelas = document.getElementById('kelas').value;
+      const hariTanggal = document.getElementById('hariTanggal').value;
+      const waktu = document.getElementById('waktu').value;
+      const tempat = document.getElementById('tempat').value;
+      const isi = document.getElementById('isiSurat').value;
+      const penutup = document.getElementById('penutup').value;
+      const jabatanKepsek = document.getElementById('jabatanKepsek').value;
+      const kepsek = document.getElementById('kepsek').value;
+      const nipKepsek = document.getElementById('nipKepsek').value;
+      let html = '';
+      if (jenis === 'keterangan' || jenis === 'tugas' || jenis === 'pkl') {
+        const judulSurat = jenis === 'keterangan' ? 'SURAT KETERANGAN' : jenis === 'tugas' ? 'SURAT TUGAS' : 'SURAT PENGANTAR PRAKTIK KERJA LAPANGAN (PKL)';
+        html += `<div class="surat-header"><h3>${judulSurat}</h3><div class="nomor-surat">Nomor: ${nomor}</div></div><div class="surat-body"><p>${isi}</p></div>`;
+        if (namaSiswa || nis || kelas) html += `<table class="data-table">${namaSiswa ? `<tr><td>Nama Lengkap</td><td>:</td><td><b>${namaSiswa}</b></td></tr>` : ''}${nis ? `<tr><td>NIS / NIP / NIK</td><td>:</td><td>${nis}</td></tr>` : ''}${kelas ? `<tr><td>Kelas / Jabatan</td><td>:</td><td>${kelas}</td></tr>` : ''}</table>`;
+        if (hariTanggal || waktu || tempat) html += `<div class="surat-body" style="text-indent: 0; margin-top: 10px;"><p>Untuk melaksanakan tugas / kegiatan pada:</p></div><table class="data-table">${hariTanggal ? `<tr><td>Hari / Tanggal</td><td>:</td><td>${hariTanggal}</td></tr>` : ''}${waktu ? `<tr><td>Waktu</td><td>:</td><td>${waktu}</td></tr>` : ''}${tempat ? `<tr><td>Tempat / Lokasi</td><td>:</td><td>${tempat}</td></tr>` : ''}</table>`;
+        html += `<div class="surat-body" style="margin-top: 15px;"><p>${penutup}</p></div>`;
+      } else {
+        html += `<div class="tujuan-wrapper"><div class="tgl-kanan">${kota}, ${tgl}</div><table style="border-collapse: collapse;"><tr><td style="padding-right: 15px;">Nomor</td><td>: ${nomor}</td></tr><tr><td style="padding-right: 15px;">Lampiran</td><td>: ${lampiran}</td></tr><tr><td style="padding-right: 15px;">Perihal</td><td>: <b>${perihal}</b></td></tr></table><br><div>Kepada Yth.<br>${kepada}</div></div><div class="surat-body"><p>${isi}</p></div>`;
+        if (namaSiswa || nis || kelas) html += `<table class="data-table">${namaSiswa ? `<tr><td>Nama Siswa/Personil</td><td>:</td><td><b>${namaSiswa}</b></td></tr>` : ''}${nis ? `<tr><td>NIS / NISN / NIP</td><td>:</td><td>${nis}</td></tr>` : ''}${kelas ? `<tr><td>Kelas / Tingkat</td><td>:</td><td>${kelas}</td></tr>` : ''}</table>`;
+        if (hariTanggal || waktu || tempat) html += `<table class="data-table">${hariTanggal ? `<tr><td>Hari / Tanggal</td><td>:</td><td><b>${hariTanggal}</b></td></tr>` : ''}${waktu ? `<tr><td>Waktu</td><td>:</td><td>${waktu}</td></tr>` : ''}${tempat ? `<tr><td>Tempat</td><td>:</td><td>${tempat}</td></tr>` : ''}</table>`;
+        html += `<div class="surat-body"><p>${penutup}</p></div>`;
+      }
+      html += `<div class="ttd-container"><div class="ttd-box"><div>${jenis === 'keterangan' || jenis === 'tugas' || jenis === 'pkl' ? `${kota}, ${tgl}` : ''}</div><div>${jabatanKepsek}</div><div class="space-ttd">${ttdBase64 ? `<img src="${ttdBase64}" alt="Tanda Tangan">` : ''}</div><div class="nama-pejabat">${kepsek}</div>${nipKepsek ? `<div>NIP. ${nipKepsek}</div>` : ''}</div></div>`;
+      document.getElementById('suratContent').innerHTML = html;
+    }
+    function muatContohData() {
+      const daftarContoh = [
+        { id: 1, jenis: 'undangan', nama: 'Undangan Rapat Orang Tua', deskripsi: 'Undangan resmi untuk rapat orang tua', ikon: 'fa-envelope-open-text', warna: 'blue' },
+        { id: 2, jenis: 'keterangan', nama: 'Surat Keterangan Siswa Aktif', deskripsi: 'Menerangkan siswa aktif', ikon: 'fa-id-card', warna: 'emerald' },
+        { id: 3, jenis: 'tugas', nama: 'Surat Tugas Guru / Staf', deskripsi: 'Penugasan resmi guru/staf', ikon: 'fa-briefcase', warna: 'amber' },
+        { id: 4, jenis: 'izin', nama: 'Permohonan Izin Tempat', deskripsi: 'Izin penggunaan tempat/kegiatan', ikon: 'fa-handshake', warna: 'purple' },
+        { id: 5, jenis: 'pemberitahuan', nama: 'Pemberitahuan Libur Sekolah', deskripsi: 'Info jadwal libur', ikon: 'fa-bullhorn', warna: 'rose' },
+        { id: 6, jenis: 'pkl', nama: 'Surat Pengantar PKL / Magang', deskripsi: 'Pengantar PKL siswa', ikon: 'fa-building-user', warna: 'cyan' }
+      ];
+      const warnaMap = { blue: 'bg-blue-50 border-blue-200 text-blue-700', emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700', amber: 'bg-amber-50 border-amber-200 text-amber-700', purple: 'bg-purple-50 border-purple-200 text-purple-700', rose: 'bg-rose-50 border-rose-200 text-rose-700', cyan: 'bg-cyan-50 border-cyan-200 text-cyan-700' };
+      document.getElementById('pilihContohList').innerHTML = daftarContoh.map(t => `<div onclick="terapkanContoh(${t.id})" class="letter-card flex items-start gap-4 group"><div class="w-12 h-12 rounded-lg ${warnaMap[t.warna]} flex items-center justify-center flex-shrink-0"><i class="fa-solid ${t.ikon} text-lg"></i></div><div class="flex-1 min-w-0"><h4 class="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition">${t.nama}</h4><p class="text-xs text-slate-500 mt-1">${t.deskripsi}</p></div><i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-blue-500 transition mt-1"></i></div>`).join('');
+      document.getElementById('modalPilihContoh').classList.add('active');
+    }
+    function terapkanContoh(nomor) {
+      const kopData = { instansiTinggi: 'PEMERINTAH PROVINSI DKI JAKARTA', instansiDinas: 'DINAS PENDIDIKAN', namaSekolah: 'SMA NEGERI 1 NUSANTARA', alamatSekolah: 'Jl. Pendidikan No. 123, Jakarta Selatan | Telp: (021) 1234567', kontakSekolah: 'Email: info@sman1nusantara.sch.id | Web: sman1nusantara.sch.id', kotaSurat: 'Jakarta', jabatanKepsek: 'Kepala Sekolah,', kepsek: 'Dr. Budi Santoso, M.Pd.', nipKepsek: '19750815 200003 1 002' };
+      const contohData = {
+        1: { jenisSurat: 'undangan', nomorSurat: '421.3/088/SMAN1/2026', lampiran: '1 (Satu) Lembar', perihal: 'Undangan Rapat Orang Tua / Wali Murid', kepada: 'Bapak/Ibu Orang Tua / Wali Murid\nSiswa Kelas XII MIPA & IPS\ndi Tempat', kelas: 'XII MIPA 1 s.d. XII IPS 4', hariTanggal: 'Sabtu, 17 Oktober 2026', waktu: '08.30 - 11.30 WIB', tempat: 'Aula Utama Lt. 2 SMA Negeri 1 Nusantara', isiSurat: 'Sehubungan dengan pelaksanaan persiapan Ujian Akhir Sekolah (UAS) serta sosialisasi Seleksi Nasional Berbasis Prestasi (SNBP), kami mengundang Bapak/Ibu Orang Tua/Wali Murid untuk hadir dalam Pertemuan Koordinasi yang akan dilaksanakan pada:', penutup: 'Mengingat krusialnya agenda ini bagi kelanjutan studi para siswa, kami sangat mengharapkan kehadiran Bapak/Ibu secara tepat waktu. Atas perhatian dan kerja samanya, kami sampaikan terima kasih.' },
+        2: { jenisSurat: 'keterangan', nomorSurat: '421.3/102/SMAN1/2026', perihal: 'Surat Keterangan Siswa Aktif', kepada: 'Menerangkan Bahwa :', namaSiswa: 'Ahmad Fauzi', nis: '10293847', kelas: 'XII MIPA 1', isiSurat: 'Bahwa nama yang tercantum di bawah ini adalah benar-benar siswa aktif terdaftar yang sedang menempuh pendidikan di SMA Negeri 1 Nusantara pada Tahun Ajaran berjalan:', penutup: 'Demikian Surat Keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.' },
+        3: { jenisSurat: 'tugas', nomorSurat: '090/045/SMAN1/2026', perihal: 'Surat Tugas', kepada: 'Memberikan Tugas Kepada :', namaSiswa: 'Siti Nurhaliza, S.Pd.', nis: 'NIP. 19820311 200801 2 006', kelas: 'Guru Pembina OSIS', hariTanggal: 'Rabu - Jumat, 14-16 Oktober 2026', waktu: '08.00 WIB s/d Selesai', tempat: 'Hotel Grand Pacific, Jakarta', isiSurat: 'Dalam rangka meningkatkan mutu pendidik dan tenaga kependidikan, Kepala Sekolah dengan ini memberikan tugas penuh kepada :', penutup: 'Demikian surat tugas ini diberikan agar dilaksanakan dengan penuh rasa tanggung jawab.' },
+        4: { jenisSurat: 'izin', nomorSurat: '005/067/SMAN1/2026', lampiran: '1 (Satu) Berkas', perihal: 'Permohonan Izin Tempat & Kegiatan', kepada: 'Kepala Pengelola Gedung Serbaguna\ndi Tempat', hariTanggal: 'Senin, 2 Mei 2026', waktu: '07.00 - 12.00 WIB', tempat: 'Gedung Serbaguna Kecamatan', isiSurat: 'Dengan hormat, sehubungan dengan agenda tahunan Peringatan Hari Pendidikan Nasional, kami mengajukan permohonan izin penggunaan lokasi dan tempat kegiatan yang akan diselenggarakan pada:', penutup: 'Demikian surat permohonan izin ini kami sampaikan. Atas perhatian, dukungan, dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.' },
+        5: { jenisSurat: 'pemberitahuan', nomorSurat: '421.4/075/SMAN1/2026', lampiran: '1 (Satu) Lembar', perihal: 'Pemberitahuan Libur Semester', kepada: 'Bapak/Ibu Orang Tua / Wali Murid\ndi Tempat', hariTanggal: 'Senin - Sabtu, 21 Desember 2026 - 3 Januari 2027', waktu: 'Libur penuh', tempat: '-', isiSurat: 'Dengan hormat, sehubungan dengan berakhirnya kegiatan belajar mengajar Semester Ganjil Tahun Ajaran 2025/2026, kami memberitahukan bahwa kegiatan belajar akan diliburkan pada:', penutup: 'Demikian pemberitahuan ini kami sampaikan. Mohon perhatian dan kerja samanya. Terima kasih.' },
+        6: { jenisSurat: 'pkl', nomorSurat: '421.5/112/SMAN1/2026', lampiran: '1 (Satu) Berkas', perihal: 'Surat Pengantar Praktik Kerja Lapangan (PKL)', kepada: 'Pimpinan / HRD Perusahaan / Instansi\ndi Tempat', namaSiswa: 'Muhammad Rizky Pratama', nis: '10293847', kelas: 'XII TKJ 1', hariTanggal: 'Senin, 5 Januari 2026 s.d. Sabtu, 28 Maret 2026', waktu: '08.00 - 16.00 WIB', tempat: 'PT Teknologi Nusantara, Jakarta Selatan', isiSurat: 'Dengan hormat, sehubungan dengan pelaksanaan program Praktik Kerja Lapangan (PKL) sebagai bagian dari kurikulum sekolah, kami mengajukan permohonan agar siswa kami dapat melaksanakan PKL/Magang di perusahaan/instansi yang Bapak/Ibu pimpin, dengan data siswa sebagai berikut:', penutup: 'Demikian surat pengantar ini kami sampaikan. Besar harapan kami agar Bapak/Ibu dapat menerima siswa kami untuk melaksanakan PKL. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.' }
+      };
+      const data = contohData[nomor];
+      if (!data) return;
+      Object.keys(kopData).forEach(key => { const el = document.getElementById(key); if (el) el.value = kopData[key]; });
+      Object.keys(data).forEach(key => { const el = document.getElementById(key); if (el) el.value = data[key]; });
+      document.getElementById('tanggalSurat').value = new Date().toISOString().split('T')[0];
+      updateTemplateByJenis();
+      renderPreview();
+      tutupModal('modalPilihContoh');
+      tampilkanToast(`Contoh berhasil dimuat!`);
+    }
+    function resetForm() {
+      tampilkanKonfirmasi('Reset Form', 'Yakin ingin mengosongkan form ini?', () => {
+        document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+        ttdBase64 = null;
+        localStorage.removeItem('editSuratId');
+        renderPreview();
+        tampilkanToast('Form berhasil direset.');
+      });
+    }
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeButton();
+    }
+    function updateThemeButton() {
+      const btn = document.getElementById('btnThemeToggle');
+      if (btn) {
+        const isDark = document.body.classList.contains('dark-mode');
+        btn.innerHTML = isDark ? '<i class="fa-solid fa-sun text-amber-400"></i> Mode Terang' : '<i class="fa-solid fa-moon text-slate-300"></i> Mode Gelap';
+      }
+    }
+  </script>
+</body>
+</html>
